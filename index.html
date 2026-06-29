@@ -1003,9 +1003,13 @@ async function onFilePick(e) {
 }
 
 async function uploadImg(file, idx) {
-  // First ensure report exists
-  if (!currentReportId) await saveReport(true);
-  if (!currentReportId) { toast('⚠','Guarda el reporte primero'); return; }
+  // Auto-save report first to get an ID
+  if (!currentReportId) {
+    toast('⏳', 'Guardando reporte...');
+    await saveReport(true);
+    await new Promise(r => setTimeout(r, 600));
+  }
+  if (!currentReportId) { toast('⚠', 'Error: no se pudo crear el reporte'); return; }
 
   // Show local preview immediately
   const localUrl = URL.createObjectURL(file);
