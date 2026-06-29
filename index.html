@@ -1097,6 +1097,36 @@ async function runAI() {
   const aiOut = document.getElementById('ai-out');
   aiOut.innerHTML = '<div class="ai-dots"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
 
+  // Collect uploaded images as base64
+  const imgContents = [];
+  const filledSlots = imgSlots.filter(Boolean);
+  for (const slot of filledSlots.slice(0, 6)) { // max 6 imgs to stay within token limit
+    try {
+      const b64 = await urlToBase64(slot.url);
+      if (b64) {
+        imgContents.push({
+          type: 'image',
+          source: { type: 'base64', media_type: 'image/jpeg', data: b64 }
+        });
+      }
+    } catch(e) { /* skip if image can't be read */ }
+  }
+
+  const textPrompt = `Eres asistente de redacción clínica para un médico endoscopista mexicano experto.
+${imgContents.length > 0 ? `Se te proporcionan ${imgContents.length} imagen(es) endoscópica(s) del estudio. Analízalas cuidadosamente.` : ''}
+
+Procedimiento: ${proc}
+Motivo: ${reason || 'no especificado'}
+Hallazgos seleccionados por el médico: ${chips.join(', ') || 'ninguno'}
+Notas adicionales del médico: ${findings || 'ninguna'}
+
+Genera una descripción endoscópica profesional en español médico formal.
+${imgContents.length > 0 ? 'Describe lo que observas en las imágenes: mucosa, lesiones, coloración, patrón vascular, cualquier hallazgo relevante.' : ''}
+Redacta un párrafo fluido de 4-6 líneas como aparecería en un reporte clínico formal. Sin bullets, sin encabezados, solo el párrafo.`;
+
+  // Build message content: images first, then text
+  const msgContent = [...imgContents, { type: 'text', text: textPrompt }];
+
   try {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -1108,18 +1138,7 @@ async function runAI() {
       body: JSON.stringify({
         model: 'claude-sonnet-4-6',
         max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: `Eres asistente de redacción clínica para un médico endoscopista mexicano.
-Genera una descripción endoscópica profesional en español médico formal.
-
-Procedimiento: ${proc}
-Motivo: ${reason || 'no especificado'}
-Hallazgos seleccionados: ${chips.join(', ') || 'ninguno seleccionado'}
-Notas del médico: ${findings || 'ninguna'}
-
-Redacta un párrafo de 3-5 líneas de hallazgos como aparecería en un reporte clínico. Sin bullets, sin encabezados.`
-        }]
+        messages: [{ role: 'user', content: msgContent }]
       })
     });
     const data = await res.json();
@@ -1127,11 +1146,28 @@ Redacta un párrafo de 3-5 líneas de hallazgos como aparecería en un reporte c
     aiOut.textContent = text;
     document.getElementById('f-findings').value = text;
     liveUpdate();
-    toast('✦', 'Hallazgos generados');
+    const imgMsg = imgContents.length > 0 ? `(analizó ${imgContents.length} foto${imgContents.length>1?'s':''})` : '';
+    toast('✦', 'Hallazgos generados ' + imgMsg);
   } catch(e) {
     aiOut.textContent = 'Error de conexión con el asistente IA.';
+    console.error(e);
   }
   btn.disabled = false; btn.textContent = '✦ IA';
+}
+
+// Convert image URL to base64 string (handles blob URLs and signed URLs)
+async function urlToBase64(url) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const b64 = reader.result.split(',')[1];
+      resolve(b64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }
 
 // ── Auth helpers ───────────────────────────────────────────────
