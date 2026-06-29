@@ -1016,15 +1016,18 @@ async function uploadImg(file, idx) {
   const path = `${currentUser.id}/${currentReportId}/${idx}.${ext}`;
 
   const { error: upErr } = await sb.storage.from('endoscopy-images').upload(path, file, { upsert: true });
-  if (upErr) { toast('⚠','Error subiendo imagen'); imgSlots[idx] = null; refreshImgGrid(); return; }
+  if (upErr) { toast('⚠', 'Storage: ' + upErr.message); imgSlots[idx] = null; refreshImgGrid(); return; }
 
-  // Upsert DB record
-  await sb.from('report_images').upsert({
+  // Delete existing then insert fresh
+  await sb.from('report_images').delete()
+    .eq('report_id', currentReportId).eq('slot_index', idx);
+  const { error: insErr } = await sb.from('report_images').insert({
     report_id: currentReportId,
     storage_path: path,
     slot_index: idx,
     label: '',
-  }, { onConflict: 'report_id,slot_index' });
+  });
+  if (insErr) { toast('⚠', 'DB: ' + insErr.message); return; }
 
   imgSlots[idx] = { url: localUrl, path, label: '' };
   refreshImgGrid();
