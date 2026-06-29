@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>INSIDE — Reportes Endoscópicos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
+
+:root {
+  --bg:         #080d18;
+  --surface:    #0f1824;
+  --surface2:   #162032;
+  --border:     #1c2d45;
+  --border2:    #243550;
+  --accent:     #00c2a8;
+  --accent2:    #0066ff;
+  --glow:       rgba(0,194,168,0.18);
+  --text:       #dde4f0;
+  --muted:      #5d7499;
+  --dim:        #2a3d55;
+  --danger:     #ff4560;
+  --success:    #10b981;
+  --warn:       #f59e0b;
+  --r:          12px;
+  --rs:         8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
+
+/* ── SCREENS ── */
+.screen{display:none;height:100vh;flex-direction:column;overflow:hidden;}
+.screen.active{display:flex;}
+
+/* ════════════════════════════════
+   AUTH SCREEN
+════════════════════════════════ */
+#auth{align-items:center;justify-content:center;
+  background:radial-gradient(ellipse at 30% 20%, rgba(0,102,255,0.12) 0%, transparent 60%),
+             radial-gradient(ellipse at 70% 80%, rgba(0,194,168,0.1) 0%, transparent 60%),
+             var(--bg);}
+.auth-card{width:100%;max-width:400px;padding:24px;}
+.auth-logo{text-align:center;margin-bottom:40px;}
+.auth-logo-icon{
+  width:64px;height:64px;border-radius:18px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;font-weight:800;color:#fff;
+  margin:0 auto 16px;
+  box-shadow:0 0 40px rgba(0,194,168,0.3);
+}
+.auth-logo h1{font-size:26px;font-weight:700;letter-spacing:-0.5px;}
+.auth-logo h1 span{color:var(--accent);}
+.auth-logo p{font-size:12px;color:var(--muted);margin-top:4px;letter-spacing:1px;text-transform:uppercase;}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;}
+.auth-title{font-size:16px;font-weight:600;margin-bottom:20px;}
+.field{margin-bottom:14px;}
+.field label{font-size:11px;color:var(--muted);display:block;margin-bottom:6px;font-weight:500;letter-spacing:0.3px;}
+.field input,.field select,.field textarea{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);padding:11px 14px;border-radius:var(--rs);
+  font-size:14px;font-family:inherit;outline:none;transition:border-color 0.2s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent);}
+.field select option{background:var(--surface);}
+.field textarea{resize:vertical;min-height:80px;line-height:1.6;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 20px;border-radius:var(--rs);font-size:14px;font-weight:500;
+  cursor:pointer;border:none;transition:all 0.2s;font-family:inherit;
+  text-decoration:none;white-space:nowrap;
+}
+.btn-primary{background:var(--accent);color:#001a17;box-shadow:0 0 24px rgba(0,194,168,0.25);}
+.btn-primary:hover{background:#00dbbc;box-shadow:0 0 36px rgba(0,194,168,0.4);}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+.btn-secondary:hover{background:var(--border);}
+.btn-ghost{background:transparent;color:var(--muted);border:none;}
+.btn-ghost:hover{color:var(--text);}
+.btn-danger{background:rgba(255,69,96,0.1);color:var(--danger);border:1px solid rgba(255,69,96,0.3);}
+.btn-full{width:100%;}
+.btn-sm{padding:7px 14px;font-size:12px;}
+.auth-err{color:var(--danger);font-size:12px;margin-top:10px;text-align:center;min-height:18px;}
+.auth-switch{text-align:center;margin-top:18px;font-size:13px;color:var(--muted);}
+.auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none;}
+
+/* ════════════════════════════════
+   TOP NAV
+════════════════════════════════ */
+.topnav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:58px;flex-shrink:0;
+  background:rgba(8,13,24,0.95);border-bottom:1px solid var(--border);
+  backdrop-filter:blur(16px);position:relative;z-index:50;
+}
+.logo-wrap{display:flex;align-items:center;gap:10px;}
+.logo-icon{
+  width:34px;height:34px;border-radius:9px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.logo-name{font-size:16px;font-weight:700;letter-spacing:-0.3px;}
+.logo-name span{color:var(--accent);}
+.logo-sub{font-size:9px;color:var(--muted);letter-spacing:1.2px;text-transform:uppercase;}
+.nav-right{display:flex;align-items:center;gap:8px;}
+.btn-icon{
+  width:34px;height:34px;border-radius:8px;background:var(--surface2);
+  border:1px solid var(--border);color:var(--muted);cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;transition:all 0.2s;
+}
+.btn-icon:hover{color:var(--text);background:var(--border);}
+
+/* ════════════════════════════════
+   DASHBOARD
+════════════════════════════════ */
+#dashboard .body{flex:1;overflow-y:auto;padding:20px;max-width:860px;margin:0 auto;width:100%;}
+.welcome{
+  background:linear-gradient(135deg,var(--surface) 0%,var(--surface2) 100%);
+  border:1px solid var(--border);border-radius:16px;
+  padding:24px;margin-bottom:20px;position:relative;overflow:hidden;
+}
+.welcome::after{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,194,168,0.1),transparent 70%);
+  pointer-events:none;
+}
+.welcome h1{font-family:'DM Serif Display',serif;font-size:22px;margin-bottom:4px;}
+.welcome p{font-size:13px;color:var(--muted);}
+.welcome .acts{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
+.stat .n{font-size:26px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;}
+.stat .l{font-size:11px;color:var(--muted);margin-top:3px;}
+.sec-title{font-size:11px;font-weight:600;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin-bottom:12px;}
+.report-list{display:flex;flex-direction:column;gap:8px;}
+.ri{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:14px 18px;display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:all 0.2s;
+}
+.ri:hover{border-color:var(--accent);background:rgba(0,194,168,0.04);}
+.ri-ico{width:40px;height:40px;border-radius:10px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.ri-info{flex:1;min-width:0;}
+.ri-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ri-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.ri-badges{display:flex;gap:6px;flex-shrink:0;align-items:center;}
+.badge{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:500;}
+.b-endo{background:rgba(0,102,255,0.15);color:#6daaff;}
+.b-colo{background:rgba(245,158,11,0.15);color:#fbbf24;}
+.b-done{background:rgba(16,185,129,0.12);color:var(--success);}
+.b-draft{background:rgba(93,116,153,0.2);color:var(--muted);}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+.empty-state .ico{font-size:48px;margin-bottom:16px;}
+.empty-state p{font-size:14px;}
+
+/* ════════════════════════════════
+   EDITOR
+════════════════════════════════ */
+#editor .body{flex:1;overflow:hidden;display:grid;grid-template-columns:300px 1fr;}
+.e-sidebar{
+  border-right:1px solid var(--border);overflow-y:auto;
+  padding:16px;display:flex;flex-direction:column;gap:14px;
+  background:var(--surface);
+}
+.e-main{overflow-y:auto;padding:20px;background:var(--bg);}
+.form-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:14px;}
+.fb-title{
+  font-size:10px;font-weight:700;letter-spacing:1.4px;
+  text-transform:uppercase;color:var(--accent);
+  margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);
+}
+.chip-group{display:flex;flex-wrap:wrap;gap:5px;}
+.chip{
+  padding:4px 10px;border-radius:20px;font-size:11px;cursor:pointer;
+  border:1px solid var(--border);background:var(--bg);color:var(--muted);transition:all 0.15s;
+}
+.chip.active{background:rgba(0,194,168,0.15);border-color:var(--accent);color:var(--accent);}
+.chip-group-label{font-size:10px;color:var(--muted);display:block;margin-bottom:4px;font-weight:500;}
+
+/* Preview */
+.prev-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.prev-hdr h2{font-size:15px;font-weight:600;}
+.prev-acts{display:flex;gap:6px;}
+
+/* Image upload grid */
+.img-section-title{font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin:20px 0 10px;}
+.img-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.img-slot{
+  aspect-ratio:1;border-radius:8px;border:1.5px dashed var(--dim);
+  background:var(--surface);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;cursor:pointer;
+  transition:all 0.2s;position:relative;overflow:hidden;
+  font-size:20px;color:var(--dim);
+}
+.img-slot:hover{border-color:var(--accent);color:var(--accent);}
+.img-slot img{width:100%;height:100%;object-fit:cover;}
+.img-slot .sn{position:absolute;bottom:3px;left:5px;font-size:9px;font-weight:700;color:var(--muted);}
+.img-slot .sl{
+  position:absolute;bottom:0;left:0;right:0;
+  background:rgba(0,0,0,0.75);padding:3px 5px;
+  font-size:9px;color:#aaa;text-align:center;
+}
+.img-slot .del{
+  position:absolute;top:3px;right:3px;width:18px;height:18px;
+  background:var(--danger);border-radius:50%;display:none;
+  align-items:center;justify-content:center;font-size:10px;color:#fff;cursor:pointer;
+  z-index:2;
+}
+.img-slot:hover .del{display:flex;}
+.img-uploading{opacity:0.5;}
+input[type=file]{display:none;}
+
+/* AI box */
+.ai-box{
+  background:linear-gradient(135deg,rgba(0,102,255,0.07),rgba(0,194,168,0.07));
+  border:1px solid rgba(0,194,168,0.2);border-radius:var(--r);padding:12px;margin-top:10px;
+}
+.ai-box-title{font-size:11px;font-weight:600;color:var(--accent);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.ai-out{font-size:12px;color:var(--muted);line-height:1.6;min-height:50px;}
+.ai-dots{display:flex;gap:5px;align-items:center;}
+.ai-dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:aiPulse 1.2s infinite;}
+.ai-dot:nth-child(2){animation-delay:.2s;}.ai-dot:nth-child(3){animation-delay:.4s;}
+@keyframes aiPulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+
+/* ════════════════════════════════
+   REPORT PREVIEW (white card)
+════════════════════════════════ */
+.rp{
+  background:#fff;color:#111;border-radius:14px;
+  overflow:hidden;box-shadow:0 16px 60px rgba(0,0,0,0.6);
+  font-family:'Inter',sans-serif;
+}
+.rp-hdr{
+  background:linear-gradient(135deg,#081428 0%,#0d2050 100%);
+  color:#fff;padding:18px 22px;
+  display:flex;align-items:flex-start;justify-content:space-between;
+}
+.rp-hdr-logo{display:flex;align-items:center;gap:12px;}
+.rp-hdr-ico{
+  width:46px;height:46px;background:linear-gradient(135deg,#00c2a8,#0066ff);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-size:20px;font-weight:800;color:#fff;flex-shrink:0;
+}
+.rp-doc{font-size:16px;font-weight:700;letter-spacing:-.2px;}
+.rp-addr{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;}
+.rp-dt{font-size:11px;color:rgba(255,255,255,.55);text-align:right;}
+.rp-pt{
+  background:#eef4ff;padding:13px 22px;border-bottom:1px solid #dde6f5;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+}
+.rp-pt-name{font-size:16px;font-weight:700;color:#081428;}
+.rp-pt-meta{font-size:11px;color:#6b7fa3;margin-top:2px;}
+.rp-pill{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;background:#d1faf5;color:#064e3b;flex-shrink:0;}
+.rp-details{
+  padding:14px 22px;border-bottom:1px solid #eef2f7;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:6px 20px;
+}
+.rp-d{font-size:11px;color:#555;}
+.rp-d strong{color:#0a1628;font-weight:600;}
+.rp-imgs{padding:16px 22px;border-bottom:1px solid #eef2f7;}
+.rp-imgs-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8a9ab8;margin-bottom:10px;}
+.rp-img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.rp-img-item{position:relative;border-radius:7px;overflow:hidden;aspect-ratio:4/3;background:#f0f4f8;}
+.rp-img-item img{width:100%;height:100%;object-fit:cover;}
+.rp-img-n{position:absolute;top:4px;left:5px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;}
+.rp-img-lbl{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);color:#fff;font-size:9px;padding:3px 6px;}
+.rp-empty-img{aspect-ratio:4/3;background:#f5f7fa;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:22px;}
+.rp-findings{padding:16px 22px;border-bottom:1px solid #eef2f7;}
+.rp-findings-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8a9ab8;margin-bottom:8px;}
+.rp-findings p{font-size:12px;color:#333;line-height:1.75;}
+.rp-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
+.rp-tag{padding:3px 9px;border-radius:10px;font-size:10px;font-weight:500;background:#e8f0fe;color:#1a56db;}
+.rp-foot{
+  padding:14px 22px;background:#f8fafc;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.rp-sig-name{font-size:13px;font-weight:600;color:#0a1628;}
+.rp-sig-meta{font-size:10px;color:#8a9ab8;margin-top:2px;}
+.rp-qr{width:44px;height:44px;background:#e2eaf5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+
+/* ════════════════════════════════
+   TOAST + MODAL
+════════════════════════════════ */
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(120px);
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:11px 18px;font-size:13px;color:var(--text);
+  box-shadow:0 8px 32px rgba(0,0,0,.5);transition:transform .3s ease;z-index:9999;
+  display:flex;align-items:center;gap:9px;
+}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;
+  display:none;align-items:center;justify-content:center;padding:20px;
+  backdrop-filter:blur(4px);
+}
+.modal-overlay.open{display:flex;}
+.modal{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;
+  padding:24px;max-width:360px;width:100%;
+}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:8px;}
+.modal p{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+.modal-acts{display:flex;gap:8px;justify-content:flex-end;}
+
+/* ════════════════════════════════
+   SCROLLBAR + PRINT
+════════════════════════════════ */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+@media print{
+  .topnav,.e-sidebar,.prev-hdr,.prev-acts,.img-section-title,.img-grid{display:none!important;}
+  #editor .body{display:block!important;}
+  .e-main{padding:0!important;background:#fff!important;}
+  .rp{box-shadow:none!important;}
+  body{overflow:auto!important;}html,body{height:auto!important;}
+}
+@media(max-width:700px){
+  #editor .body{grid-template-columns:1fr;}
+  .e-sidebar{max-height:45vh;}
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .img-grid{grid-template-columns:repeat(3,1fr);}
+  .field-row{grid-template-columns:1fr;}
+  .rp-img-grid{grid-template-columns:repeat(2,1fr);}
+  .rp-details{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════
+     CONFIG — Reemplaza estos valores
+══════════════════════════════════ -->
+<script>
+window.SUPABASE_URL  = 'https://hiflpgisonbwetchmuho.supabase.co';
+window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZmxwZ2lzb25id2V0Y2htdWhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjU1NTIsImV4cCI6MjA5ODM0MTU1Mn0.ve1bTvWIOQUUd5irUWFsONF8aGfj-rdJ9AZq7Qz60s8';
+</script>
+
+<!-- ══════════════════════════════════
+     SCREEN: AUTH
+══════════════════════════════════ -->
+<div id="auth" class="screen active">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon">I</div>
+      <h1><span>IN</span>SIDE</h1>
+      <p>Sistema de Reportes Endoscópicos</p>
+    </div>
+    <div class="auth-box">
+      <div class="auth-title" id="auth-title">Iniciar sesión</div>
+      <div class="field">
+        <label>Correo electrónico</label>
+        <input type="email" id="auth-email" placeholder="doctor@ejemplo.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="auth-pass" placeholder="••••••••" autocomplete="current-password"
+          onkeydown="if(event.key==='Enter')authSubmit()">
+      </div>
+      <div id="auth-name-field" class="field" style="display:none;">
+        <label>Nombre completo</label>
+        <input type="text" id="auth-name" placeholder="Dr. José Gutiérrez Sotres">
+      </div>
+      <div class="auth-err" id="auth-err"></div>
+      <button class="btn btn-primary btn-full" id="auth-btn" onclick="authSubmit()">Entrar</button>
+      <div class="auth-switch">
+        <span id="auth-switch-text">¿Primera vez? </span>
+        <a id="auth-switch-link" onclick="toggleAuthMode()">Crear cuenta</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: DASHBOARD
+══════════════════════════════════ -->
+<div id="dashboard" class="screen">
+  <nav class="topnav">
+    <div class="logo-wrap">
+      <div class="logo-icon">I</div>
+      <div>
+        <div class="logo-name"><span>IN</span>SIDE</div>
+        <div class="logo-sub">Reportes Endoscópicos</div>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="btn btn-secondary btn-sm" onclick="goEditor(null)">＋ Nuevo</button>
+      <button class="btn-icon" onclick="confirmLogout()" title="Cerrar sesión">⏏</button>
+    </div>
+  </nav>
+  <div class="body">
+    <div class="welcome">
+      <h1 id="welcome-name">Bienvenido</h1>
+      <p>Sistema Integral de Diagnóstico Endoscópico · San Miguel Chapultepec</p>
+      <div class="acts">
+        <button class="btn btn-primary" onclick="goEditor(null)">＋ Nuevo Reporte</button>
+      </div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n" id="stat-total">—</div><div class="l">Estudios totales</div></div>
+      <div class="stat"><div class="n" id="stat-endo">—</div><div class="l">Endoscopias</div></div>
+      <div class="stat"><div class="n" id="stat-colo">—</div><div class="l">Colonoscopias</div></div>
+    </div>
+    <div class="sec-title">Estudios Recientes</div>
+    <div class="report-list" id="report-list">
+      <div class="empty-state"><div class="ico">🔬</div><p>Cargando estudios...</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     SCREEN: EDITOR
+══════════════════════════════════ -->
+<div id="editor" class="screen">
+  <nav class="topnav">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn-icon" onclick="goBack()">←</button>
+      <div>
+        <div class="logo-name" style="font-size:14px;" id="ed-title">Nuevo Reporte</div>
+        <div class="logo-sub" id="ed-sub">sin guardar</div>
+      </div>
+    </div>
+    <div class="nav-right">
+      <button class="btn btn-secondary btn-sm" id="ai-btn" onclick="runAI()">✦ IA</button>
+      <button class="btn btn-secondary btn-sm" id="save-btn" onclick="saveReport()">💾 Guardar</button>
+      <button class="btn btn-primary btn-sm" onclick="window.print()">⬇ PDF</button>
+    </div>
+  </nav>
+
+  <div class="body">
+    <!-- SIDEBAR -->
+    <aside class="e-sidebar">
+
+      <!-- Paciente -->
+      <div class="form-block">
+        <div class="fb-title">Paciente</div>
+        <div class="field">
+          <label>Nombre completo</label>
+          <input id="f-name" placeholder="Apellido Materno Nombre" oninput="liveUpdate()">
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Edad</label><input type="number" id="f-age" placeholder="00" min="0" max="130" oninput="liveUpdate()"></div>
+          <div class="field"><label>Sexo</label>
+            <select id="f-sex" onchange="liveUpdate()">
+              <option value="">—</option>
+              <option value="M">M</option>
+              <option value="F">F</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>No. Identificación</label><input id="f-ptid" placeholder="ID-00000" oninput="liveUpdate()"></div>
+      </div>
+
+      <!-- Estudio -->
+      <div class="form-block">
+        <div class="fb-title">Estudio</div>
+        <div class="field"><label>Procedimiento</label>
+          <select id="f-proc" onchange="liveUpdate()">
+            <option value="ENDOSCOPIA">Endoscopia</option>
+            <option value="COLONOSCOPIA">Colonoscopia</option>
+            <option value="RECTOSIGMOIDOSCOPIA">Rectosigmoidoscopia</option>
+            <option value="ENTEROSCOPIA">Enteroscopia</option>
+            <option value="CPRE">CPRE</option>
+          </select>
+        </div>
+        <div class="field"><label>Fecha y hora</label><input type="datetime-local" id="f-date" oninput="liveUpdate()"></div>
+        <div class="field"><label>Instrumento</label>
+          <select id="f-instr" onchange="liveUpdate()">
+            <option>OLYMPUS GIF H180</option>
+            <option>OLYMPUS CF H180</option>
+            <option>OLYMPUS GIF H190</option>
+            <option>OLYMPUS CF H190</option>
+            <option>PENTAX EG-2990i</option>
+          </select>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Sedación</label>
+            <select id="f-sed" onchange="liveUpdate()">
+              <option>INTRAVENOSA</option>
+              <option>SUPERFICIAL</option>
+              <option>PROFUNDA</option>
+              <option>SIN SEDACIÓN</option>
+            </select>
+          </div>
+          <div class="field"><label>Asistente</label><input id="f-assist" placeholder="Nombre" oninput="liveUpdate()"></div>
+        </div>
+        <div class="field"><label>Motivo del estudio</label><input id="f-reason" placeholder="ENF. ÁCIDO PÉPTICA" oninput="liveUpdate()"></div>
+        <div class="field"><label>Dr. de Referencia</label><input id="f-ref" placeholder="Dr. Nombre" oninput="liveUpdate()"></div>
+      </div>
+
+      <!-- Hallazgos chips -->
+      <div class="form-block">
+        <div class="fb-title">Hallazgos · Selección Rápida</div>
+        <span class="chip-group-label">Esófago</span>
+        <div class="chip-group" style="margin-bottom:10px;">
+          <div class="chip" onclick="toggleChip(this)">Normal</div>
+          <div class="chip" onclick="toggleChip(this)">Esofagitis</div>
+          <div class="chip" onclick="toggleChip(this)">Barrett</div>
+          <div class="chip" onclick="toggleChip(this)">Várices</div>
+          <div class="chip" onclick="toggleChip(this)">Tumor</div>
+          <div class="chip" onclick="toggleChip(this)">Hernia Hiatal</div>
+        </div>
+        <span class="chip-group-label">Estómago</span>
+        <div class="chip-group" style="margin-bottom:10px;">
+          <div class="chip" onclick="toggleChip(this)">Normal</div>
+          <div class="chip" onclick="toggleChip(this)">Gastritis</div>
+          <div class="chip" onclick="toggleChip(this)">Úlcera</div>
+          <div class="chip" onclick="toggleChip(this)">Pólipo</div>
+          <div class="chip" onclick="toggleChip(this)">Tumor</div>
+          <div class="chip" onclick="toggleChip(this)">Hemorragia</div>
+        </div>
+        <span class="chip-group-label">Duodeno / Colon</span>
+        <div class="chip-group">
+          <div class="chip" onclick="toggleChip(this)">Normal</div>
+          <div class="chip" onclick="toggleChip(this)">Bulbitis</div>
+          <div class="chip" onclick="toggleChip(this)">Úlcera D1</div>
+          <div class="chip" onclick="toggleChip(this)">Hemorroides</div>
+          <div class="chip" onclick="toggleChip(this)">Colitis</div>
+          <div class="chip" onclick="toggleChip(this)">Divertículos</div>
+          <div class="chip" onclick="toggleChip(this)">Tumor</div>
+        </div>
+      </div>
+
+      <!-- Hallazgos texto -->
+      <div class="form-block">
+        <div class="fb-title">Hallazgos · Descripción</div>
+        <div class="field">
+          <textarea id="f-findings" rows="5" placeholder="Descripción detallada..." oninput="liveUpdate()"></textarea>
+        </div>
+        <div class="ai-box">
+          <div class="ai-box-title">✦ Asistente IA</div>
+          <div class="ai-out" id="ai-out">Selecciona hallazgos y toca "✦ IA" en la barra superior para generar descripción clínica.</div>
+        </div>
+      </div>
+
+      <!-- Notas patólogo -->
+      <div class="form-block">
+        <div class="fb-title">Notas para Patólogo</div>
+        <div class="field">
+          <textarea id="f-patho" rows="3" placeholder="Especímenes enviados, sitio de biopsia..." oninput="liveUpdate()"></textarea>
+        </div>
+      </div>
+
+      <!-- Estado -->
+      <div class="form-block">
+        <div class="fb-title">Estado del Reporte</div>
+        <div class="field">
+          <select id="f-status" onchange="liveUpdate()">
+            <option value="draft">Borrador</option>
+            <option value="complete">Completado</option>
+          </select>
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- MAIN -->
+    <main class="e-main">
+      <div class="prev-hdr">
+        <h2>Vista Previa</h2>
+        <div class="prev-acts">
+          <button class="btn btn-secondary btn-sm" onclick="triggerImgPick()">＋ Agregar foto</button>
+          <button class="btn btn-secondary btn-sm" onclick="clearImgs()">🗑 Limpiar fotos</button>
+        </div>
+      </div>
+
+      <!-- Report card preview -->
+      <div class="rp" id="rp">
+        <div class="rp-hdr">
+          <div class="rp-hdr-logo">
+            <div class="rp-hdr-ico">I</div>
+            <div>
+              <div class="rp-doc">JOSE GUTIERREZ SOTRES &nbsp; INSIDE</div>
+              <div class="rp-addr">GELATI 33-101 · SAN MIGUEL CHAPULTEPEC · 11850</div>
+            </div>
+          </div>
+          <div class="rp-dt" id="rp-dt">—</div>
+        </div>
+        <div class="rp-pt">
+          <div>
+            <div class="rp-pt-name" id="rp-pt-name">Paciente —</div>
+            <div class="rp-pt-meta" id="rp-pt-meta">Edad — · Sexo —</div>
+          </div>
+          <div class="rp-pill" id="rp-proc-pill">ENDOSCOPIA</div>
+        </div>
+        <div class="rp-details">
+          <div class="rp-d"><strong>Fecha del Estudio:</strong> <span id="rp-date2">—</span></div>
+          <div class="rp-d"><strong>Instrumento:</strong> <span id="rp-instr">OLYMPUS GIF H180</span></div>
+          <div class="rp-d"><strong>Dr. de Referencia:</strong> <span id="rp-ref">—</span></div>
+          <div class="rp-d"><strong>Sedación:</strong> <span id="rp-sed">INTRAVENOSA</span></div>
+          <div class="rp-d"><strong>Motivo:</strong> <span id="rp-reason">—</span></div>
+          <div class="rp-d"><strong>Asistente:</strong> <span id="rp-assist">—</span></div>
+        </div>
+        <div class="rp-imgs">
+          <div class="rp-imgs-title">Imágenes Endoscópicas</div>
+          <div class="rp-img-grid" id="rp-img-grid">
+            <div class="rp-empty-img">🔬</div>
+            <div class="rp-empty-img">🔬</div>
+            <div class="rp-empty-img">🔬</div>
+          </div>
+        </div>
+        <div class="rp-findings">
+          <div class="rp-findings-title">Hallazgos</div>
+          <p id="rp-findings-text">—</p>
+          <div class="rp-tags" id="rp-tags"></div>
+        </div>
+        <div id="rp-patho-sec" style="display:none;" class="rp-findings">
+          <div class="rp-findings-title">Notas para Patólogo</div>
+          <p id="rp-patho-text" style="font-size:12px;color:#444;line-height:1.7;"></p>
+        </div>
+        <div class="rp-foot">
+          <div>
+            <div class="rp-sig-name" id="rp-sig-name">Dr. José Gutiérrez Sotres</div>
+            <div class="rp-sig-meta">Médico Endoscopista · Cédula Profesional</div>
+          </div>
+          <div class="rp-qr">🔏</div>
+        </div>
+      </div>
+
+      <!-- Upload area -->
+      <div class="img-section-title">Fotografías del Estudio — toca para agregar desde cámara o galería</div>
+      <div class="img-grid" id="img-grid"></div>
+      <input type="file" id="file-input" accept="image/*" multiple onchange="onFilePick(event)">
+    </main>
+  </div>
+</div>
+
+<!-- Confirm logout modal -->
+<div class="modal-overlay" id="logout-modal">
+  <div class="modal">
+    <h3>Cerrar sesión</h3>
+    <p>¿Confirmas que quieres salir? Se perderán los cambios no guardados.</p>
+    <div class="modal-acts">
+      <button class="btn btn-ghost" onclick="closeModal('logout-modal')">Cancelar</button>
+      <button class="btn btn-danger" onclick="doLogout()">Cerrar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"><span id="toast-ico">✓</span><span id="toast-msg"></span></div>
+
+<!-- ══════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════ -->
+<script>
+// ── Init Supabase ──────────────────────────────────────────────
+const { createClient } = supabase;
+const sb = createClient(window.SUPABASE_URL, window.SUPABASE_KEY);
+
+// ── State ──────────────────────────────────────────────────────
+let authMode = 'login';         // 'login' | 'signup'
+let currentUser = null;
+let currentReportId = null;     // null = new report
+let imgSlots = [];              // [{url, path, label}|null] × 12
+let activeSlotIdx = null;
+let saveTimeout = null;
+
+const MAX_SLOTS = 12;
+
+// ── Boot ───────────────────────────────────────────────────────
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    await bootDashboard();
+  }
+})();
+
+sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'SIGNED_IN' && session?.user) {
+    currentUser = session.user;
+    await bootDashboard();
+  }
+  if (event === 'SIGNED_OUT') {
+    currentUser = null;
+    showScreen('auth');
+  }
+});
+
+// ── Auth ───────────────────────────────────────────────────────
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'signup' : 'login';
+  const isSignup = authMode === 'signup';
+  document.getElementById('auth-title').textContent = isSignup ? 'Crear cuenta' : 'Iniciar sesión';
+  document.getElementById('auth-btn').textContent = isSignup ? 'Crear cuenta' : 'Entrar';
+  document.getElementById('auth-name-field').style.display = isSignup ? '' : 'none';
+  document.getElementById('auth-switch-text').textContent = isSignup ? '¿Ya tienes cuenta? ' : '¿Primera vez? ';
+  document.getElementById('auth-switch-link').textContent = isSignup ? 'Iniciar sesión' : 'Crear cuenta';
+  document.getElementById('auth-err').textContent = '';
+}
+
+async function authSubmit() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  const btn   = document.getElementById('auth-btn');
+  const errEl = document.getElementById('auth-err');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Completa todos los campos.'; return; }
+  btn.disabled = true;
+  btn.textContent = '...';
+
+  let error;
+  if (authMode === 'signup') {
+    const name = document.getElementById('auth-name').value.trim();
+    ({ error } = await sb.auth.signUp({
+      email, password: pass,
+      options: { data: { full_name: name } }
+    }));
+    if (!error) { errEl.style.color='var(--success)'; errEl.textContent='Cuenta creada. Revisa tu correo para confirmar.'; }
+  } else {
+    ({ error } = await sb.auth.signInWithPassword({ email, password: pass }));
+  }
+
+  if (error) { errEl.style.color='var(--danger)'; errEl.textContent = error.message; }
+  btn.disabled = false;
+  btn.textContent = authMode === 'signup' ? 'Crear cuenta' : 'Entrar';
+}
+
+// ── Dashboard ──────────────────────────────────────────────────
+async function bootDashboard() {
+  showScreen('dashboard');
+  const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
+  document.getElementById('welcome-name').textContent = `Buenos días, ${name}`;
+  document.getElementById('rp-sig-name').textContent = name;
+  await loadReports();
+}
+
+async function loadReports() {
+  const { data, error } = await sb.from('reports')
+    .select('id,patient_name,patient_age,patient_sex,procedure,study_date,status,created_at')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+    .limit(30);
+
+  if (error) { toast('⚠', 'Error cargando reportes'); return; }
+
+  // Stats
+  const total = data.length;
+  const endo  = data.filter(r => r.procedure === 'ENDOSCOPIA').length;
+  const colo  = data.filter(r => r.procedure === 'COLONOSCOPIA').length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-endo').textContent  = endo;
+  document.getElementById('stat-colo').textContent  = colo;
+
+  // List
+  const list = document.getElementById('report-list');
+  if (!data.length) {
+    list.innerHTML = `<div class="empty-state"><div class="ico">🔬</div><p>Aún no hay estudios. Crea el primero.</p></div>`;
+    return;
+  }
+  list.innerHTML = data.map(r => {
+    const proc = r.procedure || 'ENDOSCOPIA';
+    const badgeClass = proc === 'COLONOSCOPIA' ? 'b-colo' : 'b-endo';
+    const statusBadge = r.status === 'complete'
+      ? '<span class="badge b-done">✓ Completo</span>'
+      : '<span class="badge b-draft">Borrador</span>';
+    const date = r.study_date
+      ? new Date(r.study_date).toLocaleDateString('es-MX')
+      : new Date(r.created_at).toLocaleDateString('es-MX');
+    const ico = proc === 'COLONOSCOPIA' ? '🩺' : '🔬';
+    return `<div class="ri" onclick="goEditor('${r.id}')">
+      <div class="ri-ico">${ico}</div>
+      <div class="ri-info">
+        <div class="ri-name">${r.patient_name || 'Sin nombre'}</div>
+        <div class="ri-meta">${date} · ${proc} · ${r.patient_age || '—'} años · ${r.patient_sex || '—'}</div>
+      </div>
+      <div class="ri-badges">
+        <span class="badge ${badgeClass}">${proc}</span>
+        ${statusBadge}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Editor ─────────────────────────────────────────────────────
+async function goEditor(reportId) {
+  currentReportId = reportId;
+  imgSlots = Array(MAX_SLOTS).fill(null);
+  resetForm();
+  showScreen('editor');
+  initImgGrid();
+
+  // Default datetime
+  const now = new Date();
+  const pad = n => String(n).padStart(2,'0');
+  document.getElementById('f-date').value =
+    `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  if (reportId) {
+    await loadReportData(reportId);
+  }
+  liveUpdate();
+}
+
+async function loadReportData(id) {
+  const { data: rep } = await sb.from('reports').select('*').eq('id', id).single();
+  if (!rep) return;
+
+  document.getElementById('f-name').value    = rep.patient_name   || '';
+  document.getElementById('f-age').value     = rep.patient_age    || '';
+  document.getElementById('f-sex').value     = rep.patient_sex    || '';
+  document.getElementById('f-ptid').value    = rep.patient_id_num || '';
+  document.getElementById('f-proc').value    = rep.procedure      || 'ENDOSCOPIA';
+  document.getElementById('f-instr').value   = rep.instrument     || 'OLYMPUS GIF H180';
+  document.getElementById('f-sed').value     = rep.sedation       || 'INTRAVENOSA';
+  document.getElementById('f-assist').value  = rep.assistant      || '';
+  document.getElementById('f-reason').value  = rep.reason         || '';
+  document.getElementById('f-ref').value     = rep.ref_doctor     || '';
+  document.getElementById('f-findings').value= rep.findings       || '';
+  document.getElementById('f-patho').value   = rep.path_notes     || '';
+  document.getElementById('f-status').value  = rep.status         || 'draft';
+  if (rep.study_date) {
+    const d = new Date(rep.study_date);
+    const pad = n => String(n).padStart(2,'0');
+    document.getElementById('f-date').value =
+      `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  // Restore chips
+  if (rep.chips && Array.isArray(rep.chips)) {
+    document.querySelectorAll('.chip').forEach(c => {
+      if (rep.chips.includes(c.textContent)) c.classList.add('active');
+    });
+  }
+  // Load images
+  const { data: imgs } = await sb.from('report_images')
+    .select('*').eq('report_id', id).order('slot_index');
+  if (imgs) {
+    for (const img of imgs) {
+      const { data: signed } = await sb.storage
+        .from('endoscopy-images')
+        .createSignedUrl(img.storage_path, 3600);
+      if (signed?.signedUrl) {
+        imgSlots[img.slot_index] = { url: signed.signedUrl, path: img.storage_path, label: img.label || '', dbId: img.id };
+      }
+    }
+    refreshImgGrid();
+  }
+}
+
+function resetForm() {
+  ['f-name','f-age','f-ptid','f-assist','f-reason','f-ref','f-findings','f-patho'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('f-sex').value    = '';
+  document.getElementById('f-proc').value   = 'ENDOSCOPIA';
+  document.getElementById('f-instr').value  = 'OLYMPUS GIF H180';
+  document.getElementById('f-sed').value    = 'INTRAVENOSA';
+  document.getElementById('f-status').value = 'draft';
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+}
+
+function goBack() {
+  showScreen('dashboard');
+  loadReports();
+}
+
+// ── Live preview update ────────────────────────────────────────
+function liveUpdate() {
+  const name    = document.getElementById('f-name').value.trim();
+  const age     = document.getElementById('f-age').value;
+  const sex     = document.getElementById('f-sex').value;
+  const proc    = document.getElementById('f-proc').value;
+  const dateVal = document.getElementById('f-date').value;
+  const instr   = document.getElementById('f-instr').value;
+  const sed     = document.getElementById('f-sed').value;
+  const assist  = document.getElementById('f-assist').value.trim();
+  const reason  = document.getElementById('f-reason').value.trim();
+  const ref     = document.getElementById('f-ref').value.trim();
+  const findings= document.getElementById('f-findings').value.trim();
+  const patho   = document.getElementById('f-patho').value.trim();
+
+  let dtStr = '—';
+  if (dateVal) {
+    const d = new Date(dateVal);
+    dtStr = d.toLocaleString('es-MX',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+
+  set('rp-pt-name', name || 'Paciente —');
+  set('rp-pt-meta', `${age ? 'Edad ' + age : 'Edad —'} · ${sex ? 'Sexo ' + sex : 'Sexo —'}`);
+  set('rp-proc-pill', proc);
+  set('rp-dt', dtStr);
+  set('rp-date2', dtStr);
+  set('rp-instr', instr);
+  set('rp-ref', ref || '—');
+  set('rp-sed', sed);
+  set('rp-reason', reason || '—');
+  set('rp-assist', assist || '—');
+  set('rp-findings-text', findings || '—');
+
+  // Tags from chips
+  const chips = [...document.querySelectorAll('.chip.active')].map(c => c.textContent);
+  document.getElementById('rp-tags').innerHTML = chips.map(c=>`<span class="rp-tag">${c}</span>`).join('');
+
+  // Patho
+  const pathoSec = document.getElementById('rp-patho-sec');
+  if (patho) {
+    pathoSec.style.display = '';
+    set('rp-patho-text', patho);
+  } else {
+    pathoSec.style.display = 'none';
+  }
+
+  // Editor breadcrumb
+  document.getElementById('ed-title').textContent = name ? `${proc} · ${name}` : 'Nuevo Reporte';
+  document.getElementById('ed-sub').textContent = currentReportId ? 'Guardado en nube' : 'Sin guardar';
+
+  // Auto-save draft after 2s of inactivity
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => saveReport(true), 2000);
+}
+
+function set(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+
+// ── Save ───────────────────────────────────────────────────────
+async function saveReport(silent = false) {
+  if (!currentUser) return;
+  const payload = {
+    user_id:        currentUser.id,
+    patient_name:   document.getElementById('f-name').value.trim(),
+    patient_age:    parseInt(document.getElementById('f-age').value) || null,
+    patient_sex:    document.getElementById('f-sex').value,
+    patient_id_num: document.getElementById('f-ptid').value.trim(),
+    procedure:      document.getElementById('f-proc').value,
+    study_date:     document.getElementById('f-date').value || null,
+    instrument:     document.getElementById('f-instr').value,
+    sedation:       document.getElementById('f-sed').value,
+    assistant:      document.getElementById('f-assist').value.trim(),
+    reason:         document.getElementById('f-reason').value.trim(),
+    ref_doctor:     document.getElementById('f-ref').value.trim(),
+    findings:       document.getElementById('f-findings').value.trim(),
+    chips:          [...document.querySelectorAll('.chip.active')].map(c => c.textContent),
+    path_notes:     document.getElementById('f-patho').value.trim(),
+    status:         document.getElementById('f-status').value,
+  };
+
+  let error;
+  if (currentReportId) {
+    ({ error } = await sb.from('reports').update(payload).eq('id', currentReportId));
+  } else {
+    const { data, error: e } = await sb.from('reports').insert(payload).select().single();
+    error = e;
+    if (!error && data) {
+      currentReportId = data.id;
+      document.getElementById('ed-sub').textContent = 'Guardado en nube';
+    }
+  }
+  if (!silent) {
+    if (error) toast('⚠', 'Error al guardar');
+    else toast('✓', 'Reporte guardado');
+  }
+}
+
+// ── Images ─────────────────────────────────────────────────────
+function initImgGrid() { imgSlots = Array(MAX_SLOTS).fill(null); refreshImgGrid(); }
+
+function refreshImgGrid() {
+  const grid = document.getElementById('img-grid');
+  grid.innerHTML = '';
+  imgSlots.forEach((slot, i) => {
+    const el = document.createElement('div');
+    el.className = 'img-slot';
+    el.dataset.i = i;
+    if (slot) {
+      el.innerHTML = `<img src="${slot.url}">
+        <span class="sn">${i+1}</span>
+        <div class="sl" contenteditable="true" onclick="event.stopPropagation()"
+          oninput="imgLabelEdit(${i},this.textContent)">${slot.label}</div>
+        <div class="del" onclick="event.stopPropagation();delImg(${i})">✕</div>`;
+    } else {
+      el.innerHTML = `<span>＋</span><span class="sn">${i+1}</span>`;
+      el.onclick = () => { activeSlotIdx = i; document.getElementById('file-input').click(); };
+    }
+    grid.appendChild(el);
+  });
+  renderPreviewImages();
+}
+
+function triggerImgPick() {
+  activeSlotIdx = imgSlots.findIndex(s => !s);
+  if (activeSlotIdx === -1) activeSlotIdx = 0;
+  document.getElementById('file-input').click();
+}
+
+async function onFilePick(e) {
+  const files = [...e.target.files];
+  let idx = activeSlotIdx !== null ? activeSlotIdx : imgSlots.findIndex(s => !s);
+  if (idx === -1) idx = 0;
+  for (const file of files) {
+    if (idx >= MAX_SLOTS) break;
+    await uploadImg(file, idx);
+    idx++;
+  }
+  e.target.value = '';
+  activeSlotIdx = null;
+}
+
+async function uploadImg(file, idx) {
+  // First ensure report exists
+  if (!currentReportId) await saveReport(true);
+  if (!currentReportId) { toast('⚠','Guarda el reporte primero'); return; }
+
+  // Show local preview immediately
+  const localUrl = URL.createObjectURL(file);
+  imgSlots[idx] = { url: localUrl, path: null, label: '', uploading: true };
+  refreshImgGrid();
+
+  const ext  = file.name.split('.').pop() || 'jpg';
+  const path = `${currentUser.id}/${currentReportId}/${idx}.${ext}`;
+
+  const { error: upErr } = await sb.storage.from('endoscopy-images').upload(path, file, { upsert: true });
+  if (upErr) { toast('⚠','Error subiendo imagen'); imgSlots[idx] = null; refreshImgGrid(); return; }
+
+  // Upsert DB record
+  await sb.from('report_images').upsert({
+    report_id: currentReportId,
+    storage_path: path,
+    slot_index: idx,
+    label: '',
+  }, { onConflict: 'report_id,slot_index' });
+
+  imgSlots[idx] = { url: localUrl, path, label: '' };
+  refreshImgGrid();
+  toast('📷', `Foto ${idx+1} guardada`);
+}
+
+async function delImg(idx) {
+  const slot = imgSlots[idx];
+  if (!slot) return;
+  if (slot.path) {
+    await sb.storage.from('endoscopy-images').remove([slot.path]);
+    await sb.from('report_images').delete().eq('report_id', currentReportId).eq('slot_index', idx);
+  }
+  imgSlots[idx] = null;
+  refreshImgGrid();
+  toast('🗑', `Foto ${idx+1} eliminada`);
+}
+
+async function imgLabelEdit(idx, text) {
+  if (imgSlots[idx]) {
+    imgSlots[idx].label = text;
+    if (currentReportId && imgSlots[idx].path) {
+      await sb.from('report_images').update({ label: text })
+        .eq('report_id', currentReportId).eq('slot_index', idx);
+    }
+  }
+  renderPreviewImages();
+}
+
+function clearImgs() {
+  imgSlots.forEach((s, i) => { if (s) delImg(i); });
+}
+
+function renderPreviewImages() {
+  const grid = document.getElementById('rp-img-grid');
+  const filled = imgSlots.filter(Boolean);
+  if (!filled.length) {
+    grid.innerHTML = '<div class="rp-empty-img">🔬</div><div class="rp-empty-img">🔬</div><div class="rp-empty-img">🔬</div>';
+    return;
+  }
+  grid.innerHTML = imgSlots.map((s, i) => {
+    if (!s) return '';
+    return `<div class="rp-img-item">
+      <img src="${s.url}">
+      <div class="rp-img-n">${i+1}</div>
+      ${s.label ? `<div class="rp-img-lbl">${s.label}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ── Chips ──────────────────────────────────────────────────────
+function toggleChip(el) { el.classList.toggle('active'); liveUpdate(); }
+
+// ── AI ─────────────────────────────────────────────────────────
+async function runAI() {
+  const btn = document.getElementById('ai-btn');
+  btn.disabled = true; btn.textContent = '...';
+  const chips    = [...document.querySelectorAll('.chip.active')].map(c => c.textContent);
+  const findings = document.getElementById('f-findings').value;
+  const proc     = document.getElementById('f-proc').value;
+  const reason   = document.getElementById('f-reason').value;
+
+  const aiOut = document.getElementById('ai-out');
+  aiOut.innerHTML = '<div class="ai-dots"><div class="ai-dot"></div><div class="ai-dot"></div><div class="ai-dot"></div></div>';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: `Eres asistente de redacción clínica para un médico endoscopista mexicano.
+Genera una descripción endoscópica profesional en español médico formal.
+
+Procedimiento: ${proc}
+Motivo: ${reason || 'no especificado'}
+Hallazgos seleccionados: ${chips.join(', ') || 'ninguno seleccionado'}
+Notas del médico: ${findings || 'ninguna'}
+
+Redacta un párrafo de 3-5 líneas de hallazgos como aparecería en un reporte clínico. Sin bullets, sin encabezados.`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c => c.text||'').join('') || 'Sin respuesta.';
+    aiOut.textContent = text;
+    document.getElementById('f-findings').value = text;
+    liveUpdate();
+    toast('✦', 'Hallazgos generados');
+  } catch(e) {
+    aiOut.textContent = 'Error de conexión con el asistente IA.';
+  }
+  btn.disabled = false; btn.textContent = '✦ IA';
+}
+
+// ── Auth helpers ───────────────────────────────────────────────
+function confirmLogout() { openModal('logout-modal'); }
+async function doLogout() { closeModal('logout-modal'); await sb.auth.signOut(); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── Screens ────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+let toastTimer;
+function toast(ico, msg) {
+  document.getElementById('toast-ico').textContent = ico;
+  document.getElementById('toast-msg').textContent = msg;
+  const t = document.getElementById('toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
