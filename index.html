@@ -734,13 +734,33 @@ async function bootDashboard() {
 }
 
 async function loadReports() {
-  const { data, error } = await sb.from('reports')
+  console.log('loadReports start, currentUser:', currentUser);
+  const timeoutPromise = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('Timeout: la consulta tardó demasiado')), 8000)
+  );
+  const queryPromise = sb.from('reports')
     .select('id,patient_name,patient_age,patient_sex,procedure,study_date,status,created_at')
     .eq('user_id', currentUser.id)
     .order('created_at', { ascending: false })
     .limit(30);
 
-  if (error) { toast('⚠', 'Error cargando reportes'); return; }
+  let data, error;
+  try {
+    const result = await Promise.race([queryPromise, timeoutPromise]);
+    data = result.data; error = result.error;
+  } catch (e) {
+    console.error('loadReports failed:', e);
+    document.getElementById('report-list').innerHTML =
+      `<div class="empty-state"><div class="ico">⚠️</div><p>${e.message}</p></div>`;
+    return;
+  }
+
+  if (error) {
+    console.error('loadReports supabase error:', error);
+    document.getElementById('report-list').innerHTML =
+      `<div class="empty-state"><div class="ico">⚠️</div><p>Error: ${error.message}</p></div>`;
+    return;
+  }
 
   // Stats
   const total = data.length;
