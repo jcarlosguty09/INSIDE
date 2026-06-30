@@ -1128,20 +1128,16 @@ Redacta un párrafo fluido de 4-6 líneas como aparecería en un reporte clínic
   const msgContent = [...imgContents, { type: 'text', text: textPrompt }];
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
         max_tokens: 1000,
         messages: [{ role: 'user', content: msgContent }]
       })
     });
     const data = await res.json();
+    if (data.error) throw new Error(data.error.message || data.error);
     const text = data.content?.map(c => c.text||'').join('') || 'Sin respuesta.';
     aiOut.textContent = text;
     document.getElementById('f-findings').value = text;
