@@ -244,52 +244,62 @@ input[type=file]{display:none;}
 }
 .rp-hdr{
   background:linear-gradient(135deg,#050d1f 0%,#0a1e4a 100%);
-  color:#fff;padding:20px 24px;
+  color:#fff;padding:22px 28px;
   display:flex;align-items:center;justify-content:space-between;
+  border-bottom:3px solid #38bdf8;
 }
 .rp-hdr-logo{display:flex;align-items:center;gap:12px;}
-.rp-hdr-ico{
-  width:46px;height:46px;background:linear-gradient(135deg,#00c2a8,#0066ff);
-  border-radius:12px;display:flex;align-items:center;justify-content:center;
-  font-size:20px;font-weight:800;color:#fff;flex-shrink:0;
-}
-.rp-doc{font-size:16px;font-weight:700;letter-spacing:-.2px;}
-.rp-addr{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;}
-.rp-dt{font-size:11px;color:rgba(255,255,255,.55);text-align:right;}
+.rp-hdr-ico{display:none;}
+.rp-doc{font-size:18px;font-weight:800;letter-spacing:-.3px;color:#fff;}
+.rp-addr{font-size:9px;color:rgba(255,255,255,.45);margin-top:3px;letter-spacing:1px;}
+.rp-dt{font-size:11px;color:rgba(255,255,255,.5);text-align:right;line-height:1.8;}
 .rp-pt{
-  background:#eef4ff;padding:13px 22px;border-bottom:1px solid #dde6f5;
+  background:#fff;padding:16px 28px;border-bottom:1px solid #e8f0fb;
   display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
 }
-.rp-pt-name{font-size:16px;font-weight:700;color:#081428;}
-.rp-pt-meta{font-size:11px;color:#6b7fa3;margin-top:2px;}
-.rp-pill{padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;background:#dbeafe;color:#1e3a5f;flex-shrink:0;}
+.rp-pt-name{font-size:20px;font-weight:800;color:#050d1f;letter-spacing:-.3px;}
+.rp-pt-meta{font-size:11px;color:#7a92b0;margin-top:3px;letter-spacing:.3px;}
+.rp-pill{
+  padding:5px 16px;border-radius:20px;font-size:11px;font-weight:700;
+  background:linear-gradient(135deg,#050d1f,#0a1e4a);color:#38bdf8;
+  letter-spacing:1px;flex-shrink:0;border:1px solid #38bdf820;
+}
 .rp-details{
-  padding:14px 22px;border-bottom:1px solid #eef2f7;
-  display:grid;grid-template-columns:repeat(2,1fr);gap:6px 20px;
+  padding:14px 28px;border-bottom:1px solid #eef2f7;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:10px 24px;
+  background:#fafcff;
 }
-.rp-d{font-size:11px;color:#555;}
-.rp-d strong{color:#0a1628;font-weight:600;}
-.rp-imgs{padding:16px 22px;border-bottom:1px solid #eef2f7;}
-.rp-imgs-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8a9ab8;margin-bottom:10px;}
-.rp-img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
-.rp-img-item{position:relative;border-radius:7px;overflow:hidden;aspect-ratio:4/3;background:#f0f4f8;}
+.rp-d{font-size:11px;color:#666;}
+.rp-d strong{color:#050d1f;font-weight:700;display:block;font-size:10px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:1px;}
+.rp-imgs{padding:18px 28px;border-bottom:1px solid #eef2f7;background:#fff;}
+.rp-imgs-title{
+  font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  color:#38bdf8;margin-bottom:12px;display:flex;align-items:center;gap:8px;
+}
+.rp-imgs-title::after{content:'';flex:1;height:1px;background:#e8f4ff;}
+.rp-img-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
+.rp-img-item{position:relative;border-radius:6px;overflow:hidden;aspect-ratio:4/3;background:#f0f4f8;box-shadow:0 1px 4px rgba(0,0,0,.08);}
 .rp-img-item img{width:100%;height:100%;object-fit:cover;}
-.rp-img-n{position:absolute;top:4px;left:5px;background:rgba(0,0,0,.6);color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;}
-.rp-img-lbl{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.65);color:#fff;font-size:9px;padding:3px 6px;}
-.rp-empty-img{aspect-ratio:4/3;background:#f5f7fa;border-radius:7px;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:22px;}
-.rp-findings{padding:16px 22px;border-bottom:1px solid #eef2f7;}
-.rp-findings-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#8a9ab8;margin-bottom:8px;}
-.rp-findings p{font-size:12px;color:#333;line-height:1.75;}
-.rp-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
-.rp-tag{padding:3px 9px;border-radius:10px;font-size:10px;font-weight:500;background:#dbeafe;color:#1e40af;}
-.rp-foot{
-  padding:16px 24px;background:#f8fafc;
-  display:flex;align-items:center;justify-content:space-between;
-  border-top:2px solid #e8f4ff;
+.rp-img-n{position:absolute;top:5px;left:6px;background:rgba(5,13,31,.75);color:#38bdf8;font-size:9px;font-weight:800;padding:2px 7px;border-radius:4px;letter-spacing:.5px;}
+.rp-img-lbl{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(5,13,31,.85));color:#fff;font-size:9px;padding:12px 7px 5px;}
+.rp-empty-img{aspect-ratio:4/3;background:#f5f8ff;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#c8d8f0;font-size:22px;border:1.5px dashed #dde6f5;}
+.rp-findings{padding:16px 28px;border-bottom:1px solid #eef2f7;background:#fff;}
+.rp-findings-title{
+  font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  color:#38bdf8;margin-bottom:10px;display:flex;align-items:center;gap:8px;
 }
-.rp-sig-name{font-size:13px;font-weight:600;color:#0a1628;}
-.rp-sig-meta{font-size:10px;color:#8a9ab8;margin-top:2px;}
-.rp-qr{width:44px;height:44px;background:#e2eaf5;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:20px;}
+.rp-findings-title::after{content:'';flex:1;height:1px;background:#e8f4ff;}
+.rp-findings p{font-size:12px;color:#2a3a50;line-height:1.85;font-family:'Georgia',serif;}
+.rp-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px;}
+.rp-tag{padding:3px 10px;border-radius:10px;font-size:10px;font-weight:600;background:#eff6ff;color:#1e40af;border:1px solid #dbeafe;}
+.rp-foot{
+  padding:18px 28px;background:#fff;
+  display:flex;align-items:center;justify-content:space-between;
+  border-top:3px solid #38bdf8;
+}
+.rp-sig-name{font-size:14px;font-weight:800;color:#050d1f;letter-spacing:-.2px;}
+.rp-sig-meta{font-size:10px;color:#7a92b0;margin-top:3px;letter-spacing:.3px;}
+.rp-qr{display:none;}
 
 /* ════════════════════════════════
    TOAST + MODAL
@@ -599,20 +609,13 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 
         <!-- ── HEADER ── -->
         <div class="rp-hdr">
-          <div style="display:flex;align-items:center;gap:14px;">
-            <img src="logo-login.png" style="width:52px;height:52px;object-fit:contain;">
-            <div>
-              <div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;">
-                DR. JOSÉ GUTIÉRREZ SOTRES
-              </div>
-              <div style="font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:1.5px;margin-top:2px;">
-                MÉDICO ENDOSCOPISTA · GELATI 33-101 · SAN MIGUEL CHAPULTEPEC
-              </div>
-            </div>
+          <div>
+            <div class="rp-doc">DR. JOSÉ GUTIÉRREZ SOTRES</div>
+            <div class="rp-addr">MÉDICO ENDOSCOPISTA &nbsp;·&nbsp; GELATI 33-101 &nbsp;·&nbsp; SAN MIGUEL CHAPULTEPEC &nbsp;·&nbsp; 11850</div>
           </div>
           <div style="text-align:right;">
-            <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:1px;">ENDOSCOP IA</div>
-            <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px;" id="rp-dt">—</div>
+            <div style="font-size:13px;font-weight:800;color:#38bdf8;letter-spacing:1px;">ENDOSCOP IA</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:5px;" id="rp-dt">—</div>
           </div>
         </div>
 
@@ -660,16 +663,13 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 
         <!-- ── FOOTER / SIGNATURE ── -->
         <div class="rp-foot">
-          <div style="display:flex;align-items:center;gap:16px;">
-            <div style="width:1px;height:40px;background:#dde;"></div>
-            <div>
-              <div class="rp-sig-name" id="rp-sig-name">Dr. José Gutiérrez Sotres</div>
-              <div class="rp-sig-meta">Médico Endoscopista · Cédula Profesional</div>
-            </div>
+          <div>
+            <div class="rp-sig-name" id="rp-sig-name">Dr. José Gutiérrez Sotres</div>
+            <div class="rp-sig-meta">Médico Endoscopista &nbsp;·&nbsp; Cédula Profesional</div>
           </div>
-          <div style="font-size:10px;color:#aab;text-align:right;letter-spacing:0.5px;">
-            <div style="font-weight:600;color:#38bdf8;font-size:12px;">ENDOSCOP IA</div>
-            <div style="margin-top:3px;">La evolución hacia mejores diagnósticos</div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;font-weight:800;color:#050d1f;letter-spacing:1px;">ENDOSCOP IA</div>
+            <div style="font-size:9px;color:#7a92b0;margin-top:3px;letter-spacing:.5px;">La evolución hacia mejores diagnósticos</div>
           </div>
         </div>
       </div>
