@@ -1314,7 +1314,21 @@ async function saveReport(silent = false) {
 }
 
 // ── Images ─────────────────────────────────────────────────────
-function initImgGrid() { imgSlots = Array(MAX_SLOTS).fill(null); refreshImgGrid(); }
+function initImgGrid() {
+  const sel = document.getElementById('photo-layout-sel');
+  const n = (sel && sel.value !== 'auto') ? parseInt(sel.value) : MAX_SLOTS;
+  imgSlots = Array(n).fill(null);
+  refreshImgGrid();
+  renderPreviewImages();
+}
+
+function setPhotoLayout(val) {
+  const n = val === 'auto' ? MAX_SLOTS : parseInt(val);
+  imgSlots = Array(n).fill(null);
+  refreshImgGrid();
+  renderPreviewImages();
+  toast('🖼', val === 'auto' ? 'Layout automatico' : 'Plantilla de ' + n + ' fotos');
+}
 
 function refreshImgGrid() {
   const grid = document.getElementById('img-grid');
@@ -1373,6 +1387,11 @@ async function uploadImg(file, idx) {
 
   const ext  = file.name.split('.').pop() || 'jpg';
   const path = `${currentUser.id}/${currentReportId}/${idx}.${ext}`;
+
+  // Show local preview immediately
+  const localPreview = URL.createObjectURL(file);
+  imgSlots[idx] = { url: localPreview, path: null, label: '' };
+  refreshImgGrid(); renderPreviewImages();
 
   const { error: upErr } = await sb.storage.from('endoscopy-images').upload(path, file, { upsert: true });
   if (upErr) { toast('⚠', 'Storage: ' + upErr.message); imgSlots[idx] = null; refreshImgGrid(); return; }
@@ -1648,6 +1667,9 @@ async function startStream(deviceId) {
       sel.appendChild(opt);
     });
     document.getElementById('cam-sub').textContent = 'En vivo - ' + (sel.selectedOptions[0]?.text || '');
+    initPinchZoom();
+    // Init pinch-to-zoom
+    initPinchZoom();
   } catch(e) {
     showNoSignal(e.name === 'NotAllowedError'
       ? 'Permiso denegado. Ajustes > Safari > Camara > Permitir.' : e.message);
@@ -2304,158 +2326,27 @@ function stopAutoAI() {
 }
 
 
-// ══════════════════════════════════════════
-//  FIX: PINCH-TO-ZOOM EN CÁMARA
-// ══════════════════════════════════════════
-let pinchStartDist = 0;
-let pinchStartZoom = 1;
-
+// Pinch-to-zoom for camera
+let pinchStartDist = 0, pinchStartZoom = 1;
 function initPinchZoom() {
   const video = document.getElementById('cam-video');
   if (!video) return;
-
   video.addEventListener('touchstart', e => {
     if (e.touches.length === 2) {
-      pinchStartDist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
+      pinchStartDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
       pinchStartZoom = currentZoom;
     }
   }, { passive: true });
-
   video.addEventListener('touchmove', e => {
-    if (e.touches.length === 2) {
-      e.preventDefault();
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY
-      );
-      const scale = dist / pinchStartDist;
-      currentZoom = Math.min(4, Math.max(1, pinchStartZoom * scale));
-      video.style.transform = `scale(${currentZoom})`;
-      video.style.transformOrigin = 'center center';
-      const lbl = document.getElementById('zoom-label');
-      if (lbl) lbl.textContent = currentZoom.toFixed(1).replace('.0','') + '×';
-    }
+    if (e.touches.length !== 2) return;
+    e.preventDefault();
+    const dist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
+    currentZoom = Math.min(4, Math.max(1, pinchStartZoom * (dist/pinchStartDist)));
+    video.style.transform = 'scale(' + currentZoom + ')';
+    video.style.transformOrigin = 'center center';
+    const lbl = document.getElementById('zoom-label');
+    if (lbl) lbl.textContent = currentZoom.toFixed(1).replace('.0','') + '×';
   }, { passive: false });
-}
-
-// Call initPinchZoom when camera opens
-const _origOpenCamera = openCamera;
-async function openCamera() {
-  await _origOpenCamera();
-  setTimeout(initPinchZoom, 500);
-}
-
-// ══════════════════════════════════════════
-//  FIX: PHOTO LAYOUT SELECTOR
-// ══════════════════════════════════════════
-let forcedPhotoLayout = 'auto'; // 'auto' | '2'|'4'|'6'|'8'|'10'|'12'
-
-function setPhotoLayout(val) {
-  forcedPhotoLayout = val;
-  const n = parseInt(val) || 0;
-  // Resize MAX_SLOTS to match selection
-  if (n > 0) {
-    // Fill missing slots with null up to n
-    while (imgSlots.length < n) imgSlots.push(null);
-    // Trim to n
-    imgSlots = imgSlots.slice(0, n);
-  } else {
-    // Auto — restore to default 12 slots
-    while (imgSlots.length < 12) imgSlots.push(null);
-  }
-  refreshImgGrid();
-  renderPreviewImages();
-  toast('🖼', val === 'auto' ? 'Layout automático' : `Plantilla de ${n} fotos`);
-}
-
-// Override renderPreviewImages to respect forced layout
-const _origRenderPreviewImages = renderPreviewImages;
-function renderPreviewImages() {
-  const grid = document.getElementById('rp-img-grid');
-  const filled = imgSlots.filter(Boolean);
-  const n = forcedPhotoLayout === 'auto' ? filled.length : parseInt(forcedPhotoLayout);
-
-  if (!filled.length) {
-    grid.style.gridTemplateColumns = 'repeat(3,1fr)';
-    grid.innerHTML = '<div class="rp-empty-img">🔬</div><div class="rp-empty-img">🔬</div><div class="rp-empty-img">🔬</div>';
-    return;
-  }
-
-  // Choose columns based on layout
-  let cols;
-  const count = n || filled.length;
-  if (count <= 1)      cols = 1;
-  else if (count <= 2) cols = 2;
-  else if (count <= 4) cols = 2;
-  else if (count <= 6) cols = 3;
-  else if (count <= 8) cols = 4;
-  else if (count <= 10) cols = 5;
-  else                  cols = 4;
-
-  grid.style.gridTemplateColumns = `repeat(${cols},1fr)`;
-  grid.innerHTML = imgSlots.map((s, i) => {
-    if (!s) return '';
-    return `<div class="rp-img-item">
-      <img src="${s.url}" alt="${i+1}">
-      <div class="rp-img-n">${i+1}</div>
-      ${s.label ? `<div class="rp-img-lbl">${s.label}</div>` : ''}
-    </div>`;
-  }).join('');
-}
-
-// Override initImgGrid to respect forced layout
-const _origInitImgGrid = initImgGrid;
-function initImgGrid() {
-  const n = forcedPhotoLayout === 'auto' ? 12 : parseInt(forcedPhotoLayout);
-  imgSlots = Array(n).fill(null);
-  refreshImgGrid();
-  renderPreviewImages();
-}
-
-// ══════════════════════════════════════════
-//  FIX: FOTO GALERÍA — asegurar que se guarden
-// ══════════════════════════════════════════
-// Override uploadImg to add better error handling and local preview
-const _origUploadImg = uploadImg;
-async function uploadImg(file, idx) {
-  // Ensure report exists first
-  if (!currentReportId) {
-    toast('⏳', 'Guardando reporte...');
-    await saveReport(true);
-    await new Promise(r => setTimeout(r, 800));
-  }
-  if (!currentReportId) { toast('⚠', 'Error: no se pudo crear el reporte'); return; }
-
-  // Show local preview immediately
-  const localUrl = URL.createObjectURL(file);
-  imgSlots[idx] = { url: localUrl, path: null, label: '', uploading: true };
-  refreshImgGrid();
-  renderPreviewImages();
-
-  const ext  = 'jpg';
-  const path = `${currentUser.id}/${currentReportId}/${idx}.${ext}`;
-
-  const { error: upErr } = await sb.storage.from('endoscopy-images').upload(path, file, { upsert: true });
-  if (upErr) {
-    toast('⚠', 'Error storage: ' + upErr.message);
-    imgSlots[idx] = null;
-    refreshImgGrid();
-    return;
-  }
-
-  await sb.from('report_images').delete().eq('report_id', currentReportId).eq('slot_index', idx);
-  const { error: insErr } = await sb.from('report_images').insert({
-    report_id: currentReportId, storage_path: path, slot_index: idx, label: ''
-  });
-  if (insErr) { toast('⚠', 'Error BD: ' + insErr.message); return; }
-
-  imgSlots[idx] = { url: localUrl, path, label: '' };
-  refreshImgGrid();
-  renderPreviewImages();
-  toast('📷', `Foto ${idx+1} guardada`);
 }
 
 </script>
