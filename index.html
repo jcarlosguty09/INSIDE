@@ -11,6 +11,7 @@
 <title>ENDOSCOP IA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
 
 :root {
@@ -206,10 +207,10 @@ input[type=file]{display:none;}
   .rp-hdr,.rp-pt,.rp-details,.rp-imgs,.rp-findings,.rp-foot{page-break-inside:avoid;break-inside:avoid;}
 }
 
+
 </style>
 </head>
 <body>
-
 <div id="auth" style="display:flex;min-height:100vh;width:100%;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 20%,rgba(56,189,248,0.12) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(0,102,204,0.1) 0%,transparent 60%),#050d1f;">
   <div class="auth-card">
     <div class="auth-logo">
@@ -837,8 +838,10 @@ input[type=file]{display:none;}
 <!-- ══════════════════════════════════
      JAVASCRIPT
 ══════════════════════════════════ -->
-
 <script>
+window.SUPABASE_URL = 'https://hiflpgisonbwetchmuho.supabase.co';
+window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZmxwZ2lzb25id2V0Y2htdWhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjU1NTIsImV4cCI6MjA5ODM0MTU1Mn0.ve1bTvWIOQUUd5irUWFsONF8aGfj-rdJ9AZq7Qz60s8';
+
 window.SUPABASE_URL = 'https://hiflpgisonbwetchmuho.supabase.co';
 window.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhpZmxwZ2lzb25id2V0Y2htdWhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3NjU1NTIsImV4cCI6MjA5ODM0MTU1Mn0.ve1bTvWIOQUUd5irUWFsONF8aGfj-rdJ9AZq7Qz60s8';
 
@@ -857,7 +860,7 @@ let saveTimeout = null;
 const MAX_SLOTS = 12;
 
 // ── Boot ───────────────────────────────────────────────────────
-// Boot — script is at end of body so DOM is ready
+// Boot — script at end of body, DOM ready
 showScreen('auth');
 (async () => {
   try {
@@ -2202,6 +2205,7 @@ function initPinchZoom() {
     if (lbl) lbl.textContent = currentZoom.toFixed(1).replace('.0','') + '×';
   }, { passive: false });
 }
+
 
 
 </script>
