@@ -379,7 +379,7 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 <!-- ══════════════════════════════════
      SCREEN: AUTH
 ══════════════════════════════════ -->
-<div id="auth" class="screen active">
+<div id="auth" class="screen active" style="display:flex;">
   <div class="auth-card">
     <div class="auth-logo">
       <img src="logo-login.png" style="width:160px;height:160px;object-fit:contain;display:block;margin:0 auto 8px;">
@@ -1560,8 +1560,13 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 
 // ── Screens ────────────────────────────────────────────────────
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  el.style.display = 'flex';
 }
 
 // ── Toast ──────────────────────────────────────────────────────
