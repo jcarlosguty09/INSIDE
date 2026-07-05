@@ -323,11 +323,25 @@ input[type=file]{display:none;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
 @media print{
-  .topnav,.e-sidebar,.prev-hdr,.prev-acts,.img-section-title,.img-grid{display:none!important;}
-  #editor .body{display:block!important;}
-  .e-main{padding:0!important;background:#fff!important;}
-  .rp{box-shadow:none!important;}
-  body{overflow:auto!important;}html,body{height:auto!important;}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+  .topnav,.e-sidebar,.prev-hdr,.prev-acts,.img-section-title,.img-grid,
+  .action-bar,.tab-bar,#cam-thumbs,.ai-box{display:none!important;}
+  #editor .body{display:block!important;height:auto!important;}
+  .e-main{padding:0!important;background:#fff!important;overflow:visible!important;}
+  .rp{box-shadow:none!important;border-radius:0!important;}
+  body{overflow:visible!important;background:#fff!important;}
+  html,body{height:auto!important;}
+  /* Force letter page */
+  @page{size:letter portrait;margin:12mm 10mm;}
+  /* Header never breaks */
+  .rp-hdr,.rp-pt,.rp-details{page-break-inside:avoid;break-inside:avoid;}
+  /* Image grid fills page nicely */
+  .rp-imgs{page-break-inside:avoid;break-inside:avoid;}
+  .rp-img-grid{gap:4px!important;}
+  .rp-img-item{border-radius:4px!important;}
+  /* Findings on new page if needed */
+  .rp-findings{page-break-inside:avoid;break-inside:avoid;}
+  .rp-foot{page-break-inside:avoid;break-inside:avoid;margin-top:auto;}
 }
 @media(max-width:700px){
   #editor .body{grid-template-columns:1fr;}
@@ -438,7 +452,7 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
       <button class="btn btn-secondary btn-sm" onclick="openCamera()">🎥 Cámara</button>
       <button class="btn btn-secondary btn-sm" id="ai-btn" onclick="runAI()">✦ IA</button>
       <button class="btn btn-secondary btn-sm" id="save-btn" onclick="saveReport()">💾 Guardar</button>
-      <button class="btn btn-primary btn-sm" onclick="window.print()">⬇ PDF</button>
+      <button class="btn btn-primary btn-sm" onclick="printReport()">⬇ PDF</button>
     </div>
   </nav>
 
@@ -1274,9 +1288,20 @@ function renderPreviewImages() {
   const grid = document.getElementById('rp-img-grid');
   const filled = imgSlots.filter(Boolean);
   if (!filled.length) {
+    grid.style.gridTemplateColumns = 'repeat(3,1fr)';
     grid.innerHTML = '<div class="rp-empty-img">🔬</div><div class="rp-empty-img">🔬</div><div class="rp-empty-img">🔬</div>';
     return;
   }
+  // Auto-detect best grid layout for letter page
+  const n = filled.length;
+  let cols;
+  if (n <= 1)       cols = 1;
+  else if (n <= 2)  cols = 2;
+  else if (n <= 4)  cols = 2;  // 2x2
+  else if (n <= 6)  cols = 3;  // 2x3
+  else if (n <= 9)  cols = 3;  // 3x3
+  else              cols = 4;  // 3x4 or 4x4
+  grid.style.gridTemplateColumns = `repeat(${cols},1fr)`;
   grid.innerHTML = imgSlots.map((s, i) => {
     if (!s) return '';
     return `<div class="rp-img-item">
@@ -1640,6 +1665,49 @@ function onRecordStop() {
   a.download = `endoscopia-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.${ext}`;
   a.click();
   toast('\u2713', `Video descargado (${(blob.size/1024/1024).toFixed(1)} MB)`);
+}
+
+
+// ── PRINT / PDF ────────────────────────────────────────────────
+function printReport() {
+  // Set grid columns dynamically for print based on photo count
+  const filled = imgSlots.filter(Boolean);
+  const n = filled.length;
+  let cols = 3;
+  if (n <= 1) cols = 1;
+  else if (n <= 2) cols = 2;
+  else if (n <= 4) cols = 2;
+  else if (n <= 6) cols = 3;
+  else if (n <= 9) cols = 3;
+  else cols = 4;
+
+  // Inject print-specific grid style
+  let styleEl = document.getElementById('print-grid-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'print-grid-style';
+    document.head.appendChild(styleEl);
+  }
+  // Each image aspect ratio adapts to fill page
+  const rowH = n <= 4 ? '38vh' : n <= 6 ? '28vh' : n <= 9 ? '22vh' : '18vh';
+  styleEl.textContent = `
+    @media print {
+      .rp-img-grid {
+        grid-template-columns: repeat(${cols}, 1fr) !important;
+        gap: 3mm !important;
+      }
+      .rp-img-item {
+        aspect-ratio: unset !important;
+        height: ${rowH} !important;
+      }
+      .rp-img-item img {
+        height: 100% !important;
+        width: 100% !important;
+        object-fit: cover !important;
+      }
+    }
+  `;
+  window.print();
 }
 
 </script>
