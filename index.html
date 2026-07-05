@@ -462,6 +462,8 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
     <div class="nav-right">
       <button class="btn btn-secondary btn-sm" onclick="openCamera()">🎥 Cámara</button>
       <button class="btn btn-secondary btn-sm" id="ai-btn" onclick="runAI()">✦ IA</button>
+      <button class="btn btn-secondary btn-sm" onclick="openSignature()">✍️ Firmar</button>
+      <button class="btn btn-secondary btn-sm" onclick="openEmail()">📧 Email</button>
       <button class="btn btn-secondary btn-sm" id="save-btn" onclick="saveReport()">💾 Guardar</button>
       <button class="btn btn-primary btn-sm" onclick="printReport()">⬇ PDF</button>
     </div>
@@ -564,6 +566,22 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
       <!-- Hallazgos texto -->
       <div class="form-block">
         <div class="fb-title">Hallazgos · Descripción</div>
+        <!-- Plantillas rápidas -->
+        <div style="margin-bottom:10px;">
+          <div style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;">Plantillas rápidas</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;">
+            <div class="chip" onclick="applyTemplate('normal_endo')">✓ Normal EDA</div>
+            <div class="chip" onclick="applyTemplate('gastritis')">Gastritis</div>
+            <div class="chip" onclick="applyTemplate('ulcera')">Úlcera péptica</div>
+            <div class="chip" onclick="applyTemplate('esofagitis')">Esofagitis</div>
+            <div class="chip" onclick="applyTemplate('barrett')">Barrett</div>
+            <div class="chip" onclick="applyTemplate('hernia')">Hernia hiatal</div>
+            <div class="chip" onclick="applyTemplate('normal_colo')">✓ Normal Colo</div>
+            <div class="chip" onclick="applyTemplate('hemorroides')">Hemorroides</div>
+            <div class="chip" onclick="applyTemplate('colitis')">Colitis</div>
+            <div class="chip" onclick="applyTemplate('polipos')">Pólipos</div>
+          </div>
+        </div>
         <div class="field">
           <textarea id="f-findings" rows="5" placeholder="Descripción detallada..." oninput="liveUpdate()"></textarea>
         </div>
@@ -666,6 +684,9 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
           <div>
             <div class="rp-sig-name" id="rp-sig-name">Dr. José Gutiérrez Sotres</div>
             <div class="rp-sig-meta">Médico Endoscopista &nbsp;·&nbsp; Cédula Profesional</div>
+            <div id="rp-sig-img" style="margin-top:6px;display:none;">
+              <img id="sig-preview-img" style="height:48px;opacity:0.85;">
+            </div>
           </div>
           <div style="text-align:right;">
             <div style="font-size:11px;font-weight:800;color:#050d1f;letter-spacing:1px;">ENDOSCOP IA</div>
@@ -858,6 +879,48 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
   font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;
 }
 </style>
+
+
+<!-- ── SIGNATURE MODAL ── -->
+<div class="modal-overlay" id="sig-modal">
+  <div class="modal" style="max-width:480px;width:100%;">
+    <h3 style="margin-bottom:6px;">✍️ Firma Digital</h3>
+    <p style="margin-bottom:16px;">Firma con tu dedo o mouse. La firma se agrega al reporte.</p>
+    <canvas id="sig-canvas" width="430" height="180" style="
+      border:1.5px solid var(--border);border-radius:10px;
+      background:#fff;cursor:crosshair;width:100%;touch-action:none;"></canvas>
+    <div style="display:flex;gap:8px;margin-top:12px;">
+      <button class="btn btn-ghost btn-sm" onclick="clearSignature()">Borrar</button>
+      <div style="flex:1;"></div>
+      <button class="btn btn-secondary" onclick="closeModal('sig-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSignature()">💾 Guardar firma</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── EMAIL MODAL ── -->
+<div class="modal-overlay" id="email-modal">
+  <div class="modal" style="max-width:420px;width:100%;">
+    <h3 style="margin-bottom:6px;">📧 Enviar Reporte</h3>
+    <p style="margin-bottom:16px;">El reporte se enviará como PDF por correo electrónico.</p>
+    <div class="field">
+      <label>Correo del destinatario</label>
+      <input type="email" id="email-to" placeholder="paciente@email.com o doctor@hospital.com">
+    </div>
+    <div class="field">
+      <label>Asunto</label>
+      <input type="text" id="email-subject" placeholder="Reporte de Endoscopia">
+    </div>
+    <div class="field">
+      <label>Mensaje (opcional)</label>
+      <textarea id="email-body" rows="3" placeholder="Estimado paciente, adjunto encontrará su reporte..."></textarea>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:4px;justify-content:flex-end;">
+      <button class="btn btn-secondary" onclick="closeModal('email-modal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="sendEmail()">📧 Enviar</button>
+    </div>
+  </div>
+</div>
 
 <!-- Confirm logout modal -->
 <div class="modal-overlay" id="logout-modal">
@@ -1736,6 +1799,123 @@ function printReport() {
     }
   `;
   window.print();
+}
+
+
+// ══════════════════════════════════════════
+//  PLANTILLAS DE HALLAZGOS
+// ══════════════════════════════════════════
+const TEMPLATES = {
+  normal_endo: `Se realiza panendoscopia oral bajo sedación intravenosa con adecuada tolerancia. El esófago presenta mucosa de coloración normal, sin lesiones erosivas, ulceradas ni de aspecto neoplásico. La unión gastroesofágica se ubica en sitio habitual. El estómago muestra mucosa gástrica de aspecto normal, con pliegues conservados, sin úlceras, pólipos ni masas. El píloro es competente. El duodeno en su primera y segunda porción no presenta alteraciones. Se concluye estudio dentro de límites normales.`,
+
+  gastritis: `Se realiza panendoscopia oral bajo sedación intravenosa. Esófago sin alteraciones. En el estómago se observa mucosa con patrón eritematoso difuso, de predominio en antro y cuerpo gástrico, con engrosamiento de pliegues y aspecto congestivo compatible con gastritis crónica activa. No se identifican úlceras ni lesiones de aspecto neoplásico. Píloro competente. Duodeno sin lesiones. Se toman biopsias para estudio histopatológico y determinación de H. pylori.`,
+
+  ulcera: `Se realiza panendoscopia oral bajo sedación intravenosa. Esófago sin alteraciones. En el estómago se identifica lesión ulcerada de bordes bien definidos, fondo fibrinoso, sin datos de actividad hemorrágica, localizada en la curvatura menor del antro gástrico, que mide aproximadamente 1.5 cm en su diámetro mayor. El resto de la mucosa gástrica muestra cambios inflamatorios leves. Píloro competente. Duodeno sin lesiones. Se toman múltiples biopsias del borde de la lesión para estudio histopatológico.`,
+
+  esofagitis: `Se realiza panendoscopia oral bajo sedación intravenosa. En el esófago se observan cambios inflamatorios con erosiones lineales en el tercio distal, con eritema y friabilidad de la mucosa, clasificación de Los Ángeles grado B. No se aprecian estenosis ni membranas. La unión gastroesofágica se identifica en sitio habitual. El estómago y duodeno no presentan alteraciones significativas. Los hallazgos son compatibles con esofagitis por reflujo gastroesofágico. Se recomienda manejo médico con inhibidores de bomba de protones.`,
+
+  barrett: `Se realiza panendoscopia oral bajo sedación intravenosa. En el esófago distal se observa desplazamiento de la línea Z con presencia de epitelio de aspecto metaplásico de coloración salmón, que se extiende aproximadamente 3 cm en sentido proximal a la unión gastroesofágica, de distribución circunferencial. No se identifican lesiones nodulares ni irregularidades de la mucosa. Los hallazgos son compatibles con esófago de Barrett de segmento largo. Se toman biopsias en cuatro cuadrantes cada 2 cm para estudio histopatológico. Se recomienda seguimiento endoscópico estrecho.`,
+
+  hernia: `Se realiza panendoscopia oral bajo sedación intravenosa. En el esófago se observa desplazamiento de la unión gastroesofágica aproximadamente 3-4 cm por arriba del hiato diafragmático, con visualización de pliegues gástricos en el interior del tórax, hallazgos compatibles con hernia hiatal por deslizamiento. La mucosa esofágica no presenta erosiones ni cambios metaplásicos. El estómago y duodeno sin lesiones significativas. Se recomienda manejo médico y modificaciones en el estilo de vida.`,
+
+  normal_colo: `Se realiza colonoscopia total bajo sedación intravenosa con adecuada preparación intestinal y buena tolerancia. Se logra intubación del ciego con identificación de válvula ileocecal y apéndice. La mucosa del colon derecho, transverso, izquierdo, sigmoides y recto presenta coloración y patrón vascular normales, sin lesiones polipoides, ulceradas ni de aspecto neoplásico. La retirada del instrumento se realiza en forma minuciosa. Se concluye colonoscopia dentro de límites normales.`,
+
+  hemorroides: `Se realiza colonoscopia total bajo sedación intravenosa con adecuada preparación. Se logra intubación del ciego. La mucosa del colon en toda su extensión no presenta lesiones significativas. En el recto distal y canal anal se identifican almohadillas hemorroidales internas de grado II, sin datos de actividad hemorrágica activa. No se observan fisuras ni fístulas. El resto del colon sin alteraciones. Los hallazgos son compatibles con enfermedad hemorroidal interna.`,
+
+  colitis: `Se realiza colonoscopia total bajo sedación intravenosa. Se logra intubación del ciego. En el colon sigmoides y recto se observa mucosa con patrón inflamatorio difuso, con eritema, granularidad, pérdida del patrón vascular normal y friabilidad al contacto, sin úlceras profundas ni pseudomembranas. El resto del colon presenta mucosa de aspecto normal. Los hallazgos son compatibles con colitis de distribución izquierda. Se toman biopsias para correlación histopatológica.`,
+
+  polipos: `Se realiza colonoscopia total bajo sedación intravenosa con adecuada preparación. Se logra intubación del ciego. Durante la exploración se identifican dos lesiones polipoides sésiles en colon sigmoides, la mayor de 8 mm y la menor de 5 mm de diámetro, de superficie lisa, sin depresión central. Se realiza polipectomía mediante asa caliente con resección completa en bloc. Se envían especímenes a estudio histopatológico. El resto del colon sin alteraciones. Se recomienda colonoscopia de vigilancia en 3 años.`,
+};
+
+function applyTemplate(key) {
+  const text = TEMPLATES[key];
+  if (!text) return;
+  const ta = document.getElementById('f-findings');
+  ta.value = text;
+  liveUpdate();
+  toast('📋', 'Plantilla aplicada');
+}
+
+// ══════════════════════════════════════════
+//  FIRMA DIGITAL
+// ══════════════════════════════════════════
+let sigCanvas, sigCtx, sigDrawing = false, sigHasData = false;
+
+function openSignature() {
+  openModal('sig-modal');
+  setTimeout(() => {
+    sigCanvas = document.getElementById('sig-canvas');
+    sigCtx = sigCanvas.getContext('2d');
+    sigCtx.strokeStyle = '#050d1f';
+    sigCtx.lineWidth = 2.5;
+    sigCtx.lineCap = 'round';
+    sigCtx.lineJoin = 'round';
+
+    // Mouse events
+    sigCanvas.onmousedown  = e => { sigDrawing = true; sigCtx.beginPath(); sigCtx.moveTo(...sigXY(e)); };
+    sigCanvas.onmousemove  = e => { if (!sigDrawing) return; sigCtx.lineTo(...sigXY(e)); sigCtx.stroke(); sigHasData = true; };
+    sigCanvas.onmouseup    = () => sigDrawing = false;
+    sigCanvas.onmouseleave = () => sigDrawing = false;
+
+    // Touch events (iPad)
+    sigCanvas.ontouchstart = e => { e.preventDefault(); sigDrawing = true; sigCtx.beginPath(); sigCtx.moveTo(...sigXY(e.touches[0])); };
+    sigCanvas.ontouchmove  = e => { e.preventDefault(); if (!sigDrawing) return; sigCtx.lineTo(...sigXY(e.touches[0])); sigCtx.stroke(); sigHasData = true; };
+    sigCanvas.ontouchend   = () => sigDrawing = false;
+  }, 100);
+}
+
+function sigXY(e) {
+  const r = sigCanvas.getBoundingClientRect();
+  const scaleX = sigCanvas.width / r.width;
+  const scaleY = sigCanvas.height / r.height;
+  return [(e.clientX - r.left) * scaleX, (e.clientY - r.top) * scaleY];
+}
+
+function clearSignature() {
+  sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+  sigHasData = false;
+}
+
+function saveSignature() {
+  if (!sigHasData) { toast('⚠', 'Dibuja tu firma primero'); return; }
+  const dataUrl = sigCanvas.toDataURL('image/png');
+  // Show in report footer
+  const imgEl = document.getElementById('sig-preview-img');
+  const wrapper = document.getElementById('rp-sig-img');
+  if (imgEl && wrapper) {
+    imgEl.src = dataUrl;
+    wrapper.style.display = 'block';
+  }
+  closeModal('sig-modal');
+  toast('✍️', 'Firma guardada en el reporte');
+}
+
+// ══════════════════════════════════════════
+//  ENVIAR POR EMAIL
+// ══════════════════════════════════════════
+function openEmail() {
+  // Pre-fill subject with patient name and procedure
+  const name = document.getElementById('f-name')?.value?.trim() || 'Paciente';
+  const proc = document.getElementById('f-proc')?.value || 'Endoscopia';
+  const date = document.getElementById('rp-date2')?.textContent || '';
+  document.getElementById('email-subject').value = `Reporte de ${proc} — ${name} · ${date}`;
+  document.getElementById('email-body').value = `Estimado paciente,\n\nAdjunto encontrará su reporte de ${proc.toLowerCase()} realizado en nuestra unidad.\n\nQuedamos a sus órdenes para cualquier consulta.\n\nAtentamente,\nDr. José Gutiérrez Sotres\nMédico Endoscopista`;
+  openModal('email-modal');
+}
+
+function sendEmail() {
+  const to      = document.getElementById('email-to').value.trim();
+  const subject = document.getElementById('email-subject').value.trim();
+  const body    = document.getElementById('email-body').value.trim();
+
+  if (!to) { toast('⚠', 'Escribe el correo del destinatario'); return; }
+  if (!to.includes('@')) { toast('⚠', 'Correo inválido'); return; }
+
+  // Use mailto — opens native mail app on iPad
+  const mailtoLink = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.open(mailtoLink, '_blank');
+  closeModal('email-modal');
+  toast('📧', 'Abriendo correo... recuerda adjuntar el PDF');
 }
 
 </script>
