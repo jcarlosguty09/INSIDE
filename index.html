@@ -857,10 +857,10 @@ let saveTimeout = null;
 const MAX_SLOTS = 12;
 
 // ── Boot ───────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  showScreen('auth'); // Always show auth first
+// Boot - runs immediately since script is at end of body
+showScreen('auth'); // Always show auth first
 
-  // Check existing session
+(async () => {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) {
@@ -871,7 +871,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('Boot error:', e);
   }
 
-  // Listen for auth changes
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
       currentUser = session.user;
@@ -882,7 +881,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       showScreen('auth');
     }
   });
-});
+})();
 
 // ── Auth ───────────────────────────────────────────────────────
 function toggleAuthMode() {
