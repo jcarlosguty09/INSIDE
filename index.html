@@ -642,119 +642,152 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
       <button class="btn-icon" onclick="closeCamera()">←</button>
       <div>
         <div class="logo-name" style="font-size:14px;" id="cam-title">Cámara Endoscópica</div>
-        <div class="logo-sub" id="cam-sub">Selecciona fuente de video</div>
+        <div class="logo-sub" id="cam-sub">Conectando...</div>
       </div>
     </div>
     <div class="nav-right">
       <select id="cam-select" onchange="switchCamera(this.value)" style="
         background:var(--surface2);border:1px solid var(--border);color:var(--text);
-        padding:6px 10px;border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none;">
+        padding:6px 10px;border-radius:var(--rs);font-size:12px;font-family:inherit;outline:none;max-width:200px;">
         <option value="">Detectando cámaras...</option>
       </select>
     </div>
   </nav>
 
-  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#000;">
-    <!-- Live feed -->
+  <!-- TAB BAR: Live / Galería -->
+  <div style="display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;">
+    <button id="cam-tab-live" onclick="camSwitchTab('live')" style="
+      flex:1;padding:11px;font-size:13px;font-weight:500;cursor:pointer;
+      background:transparent;border:none;color:var(--accent);
+      border-bottom:2px solid var(--accent);font-family:inherit;">
+      🔴 En Vivo
+    </button>
+    <button id="cam-tab-gallery" onclick="camSwitchTab('gallery')" style="
+      flex:1;padding:11px;font-size:13px;font-weight:500;cursor:pointer;
+      background:transparent;border:none;color:var(--muted);
+      border-bottom:2px solid transparent;font-family:inherit;">
+      🖼 Galería (<span id="gallery-count">0</span>)
+    </button>
+  </div>
+
+  <!-- ── TAB: LIVE ── -->
+  <div id="cam-tab-live-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden;background:#000;">
+    <!-- Video feed -->
     <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#000;">
       <video id="cam-video" autoplay playsinline muted
         style="max-width:100%;max-height:100%;width:100%;object-fit:contain;"></video>
 
-      <!-- Overlay: no signal -->
       <div id="cam-nosignal" style="
         position:absolute;inset:0;display:flex;flex-direction:column;
         align-items:center;justify-content:center;color:var(--muted);gap:12px;">
         <div style="font-size:48px;">📡</div>
         <div style="font-size:15px;font-weight:500;">Sin señal de video</div>
-        <div style="font-size:12px;color:var(--dim);text-align:center;max-width:280px;line-height:1.6;">
-          Conecta la capturadora UVC al iPad y selecciona la fuente arriba
+        <div style="font-size:12px;color:var(--dim);text-align:center;max-width:280px;line-height:1.6;" id="cam-nosignal-msg">
+          Conecta la capturadora UVC y selecciona la fuente arriba
         </div>
         <button class="btn btn-secondary" style="margin-top:8px;" onclick="initCamera()">🔄 Reintentar</button>
       </div>
 
-      <!-- Recording indicator -->
+      <!-- REC indicator -->
       <div id="rec-indicator" style="
         position:absolute;top:16px;left:16px;
         background:rgba(255,69,96,0.9);color:#fff;
-        padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;
-        display:none;align-items:center;gap:6px;">
+        padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;
+        display:none;align-items:center;gap:7px;">
         <div style="width:8px;height:8px;border-radius:50%;background:#fff;animation:recBlink 1s infinite;"></div>
         REC <span id="rec-timer">00:00</span>
       </div>
 
-      <!-- Capture flash -->
-      <div id="cam-flash" style="
-        position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;
-        transition:opacity 0.1s;"></div>
+      <!-- Flash -->
+      <div id="cam-flash" style="position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity 0.08s;"></div>
 
-      <!-- Photo counter badge -->
+      <!-- Photo count -->
       <div id="photo-count-badge" style="
         position:absolute;top:16px;right:16px;
-        background:rgba(0,194,168,0.9);color:#001a17;
-        padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;
-        display:none;">
-        📷 <span id="photo-count-num">0</span> fotos
+        background:rgba(0,194,168,0.92);color:#001a17;
+        padding:6px 13px;border-radius:20px;font-size:12px;font-weight:700;display:none;">
+        📷 <span id="photo-count-num">0</span>
       </div>
     </div>
 
-    <!-- Thumbnails strip -->
-    <div id="cam-thumbs" style="
-      height:80px;background:rgba(0,0,0,0.8);border-top:1px solid var(--border);
-      display:flex;align-items:center;gap:8px;padding:8px 12px;
-      overflow-x:auto;flex-shrink:0;">
-      <div style="font-size:11px;color:var(--dim);white-space:nowrap;">Capturas del estudio</div>
-    </div>
-
-    <!-- Controls bar -->
+    <!-- Live controls -->
     <div style="
       background:var(--surface);border-top:1px solid var(--border);
-      padding:16px 24px;display:flex;align-items:center;justify-content:space-between;
-      flex-shrink:0;gap:16px;">
+      padding:14px 24px;display:flex;align-items:center;justify-content:space-between;
+      flex-shrink:0;gap:12px;">
 
-      <!-- Left: report info -->
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" id="cam-report-name">Sin reporte activo</div>
-        <div style="font-size:10px;color:var(--muted);margin-top:2px;" id="cam-report-proc">Abre un reporte para asociar las capturas</div>
+      <!-- Record -->
+      <button id="btn-record" onclick="toggleRecord()" title="Grabar video" style="
+        width:48px;height:48px;border-radius:50%;border:3px solid var(--danger);
+        background:transparent;cursor:pointer;display:flex;align-items:center;
+        justify-content:center;transition:all 0.2s;flex-shrink:0;">
+        <div id="rec-inner" style="width:20px;height:20px;border-radius:50%;background:var(--danger);transition:all 0.2s;"></div>
+      </button>
+
+      <!-- Capture photo (big center) -->
+      <button onclick="capturePhoto()" style="
+        width:72px;height:72px;border-radius:50%;
+        border:4px solid #fff;background:rgba(255,255,255,0.92);
+        cursor:pointer;display:flex;align-items:center;justify-content:center;
+        font-size:26px;transition:transform 0.1s;flex-shrink:0;
+        box-shadow:0 4px 24px rgba(0,0,0,0.5);"
+        onpointerdown="this.style.transform='scale(0.9)'"
+        onpointerup="this.style.transform='scale(1)'">
+        📷
+      </button>
+
+      <!-- Stop record -->
+      <button id="btn-stop" onclick="stopRecord()" title="Detener grabación" style="
+        width:48px;height:48px;border-radius:50%;border:3px solid var(--muted);
+        background:transparent;cursor:pointer;display:flex;align-items:center;
+        justify-content:center;flex-shrink:0;display:none;">
+        <div style="width:16px;height:16px;border-radius:3px;background:var(--muted);"></div>
+      </button>
+
+      <!-- Go to gallery -->
+      <button class="btn btn-secondary btn-sm" onclick="camSwitchTab('gallery')" style="flex-shrink:0;">
+        🖼 Ver galería
+      </button>
+    </div>
+  </div>
+
+  <!-- ── TAB: GALLERY ── -->
+  <div id="cam-tab-gallery-content" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
+    <!-- Gallery header -->
+    <div style="padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <div style="font-size:12px;color:var(--muted);">
+        Toca las fotos para seleccionar las que van al reporte
       </div>
-
-      <!-- Center: main controls -->
-      <div style="display:flex;align-items:center;gap:12px;">
-        <!-- Record button -->
-        <button id="btn-record" onclick="toggleRecord()" style="
-          width:52px;height:52px;border-radius:50%;border:3px solid var(--danger);
-          background:transparent;cursor:pointer;display:flex;align-items:center;
-          justify-content:center;transition:all 0.2s;flex-shrink:0;">
-          <div id="rec-inner" style="
-            width:22px;height:22px;border-radius:50%;background:var(--danger);
-            transition:all 0.2s;"></div>
-        </button>
-
-        <!-- Capture photo button -->
-        <button onclick="capturePhoto()" style="
-          width:68px;height:68px;border-radius:50%;
-          border:4px solid #fff;background:rgba(255,255,255,0.9);
-          cursor:pointer;display:flex;align-items:center;justify-content:center;
-          font-size:24px;transition:all 0.15s;flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,0.4);"
-          onmousedown="this.style.transform='scale(0.92)'"
-          onmouseup="this.style.transform='scale(1)'"
-          ontouchstart="this.style.transform='scale(0.92)'"
-          ontouchend="this.style.transform='scale(1)'">
-          📷
-        </button>
-
-        <!-- Stop record (hidden when not recording) -->
-        <button id="btn-stop" onclick="stopRecord()" style="
-          width:52px;height:52px;border-radius:50%;border:3px solid var(--muted);
-          background:transparent;cursor:pointer;display:flex;align-items:center;
-          justify-content:center;transition:all 0.2s;flex-shrink:0;display:none;">
-          <div style="width:18px;height:18px;border-radius:3px;background:var(--muted);"></div>
-        </button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="camSelectAll()">Seleccionar todo</button>
+        <button class="btn btn-secondary btn-sm" onclick="camClearSel()">Limpiar selección</button>
       </div>
+    </div>
 
-      <!-- Right: save to report -->
-      <div style="flex:1;display:flex;justify-content:flex-end;">
-        <button class="btn btn-primary btn-sm" onclick="saveAllToReport()" id="btn-save-report">
-          💾 Guardar en reporte
+    <!-- Photo grid -->
+    <div id="gallery-grid" style="
+      flex:1;overflow-y:auto;padding:12px;
+      display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+      align-content:start;">
+      <div id="gallery-empty" style="
+        grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
+        <div style="font-size:40px;margin-bottom:12px;">📷</div>
+        <p>Aún no has capturado fotos.<br>Vuelve a "En Vivo" y toca el botón de captura.</p>
+      </div>
+    </div>
+
+    <!-- Gallery footer: save selected -->
+    <div style="padding:14px 20px;background:var(--surface);border-top:1px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px;">
+      <div style="font-size:13px;color:var(--muted);">
+        <span id="sel-count">0</span> foto(s) seleccionada(s)
+        <span style="color:var(--dim);font-size:11px;margin-left:6px;" id="report-name-footer"></span>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-danger btn-sm" onclick="camDeleteSelected()" id="btn-delete-sel">🗑 Eliminar</button>
+        <button class="btn btn-primary btn-sm" onclick="saveSelectedToReport()" id="btn-save-sel">
+          💾 Agregar al reporte
         </button>
       </div>
     </div>
@@ -763,9 +796,18 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 
 <style>
 @keyframes recBlink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-#cam-video { background:#000; }
-#cam-thumbs::-webkit-scrollbar { height:3px; }
-#cam-thumbs::-webkit-scrollbar-thumb { background:var(--border); }
+.cam-gallery-item { position:relative;aspect-ratio:4/3;border-radius:8px;overflow:hidden;cursor:pointer; }
+.cam-gallery-item img { width:100%;height:100%;object-fit:cover;transition:opacity 0.15s; }
+.cam-gallery-item .sel-overlay {
+  position:absolute;inset:0;background:rgba(0,194,168,0.35);
+  display:none;align-items:center;justify-content:center;font-size:28px;
+}
+.cam-gallery-item.selected .sel-overlay { display:flex; }
+.cam-gallery-item.selected img { opacity:0.7; }
+.cam-gallery-item .item-num {
+  position:absolute;top:5px;left:6px;background:rgba(0,0,0,0.6);color:#fff;
+  font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;
+}
 </style>
 
 <!-- Confirm logout modal -->
@@ -1345,6 +1387,7 @@ function toast(ico, msg) {
   toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+
 // ══════════════════════════════════════════
 //  CAMERA MODULE
 // ══════════════════════════════════════════
@@ -1353,236 +1396,226 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let recTimerInterval = null;
 let recSeconds = 0;
-let camPhotos = []; // {blob, url} captured during session
+let camPhotos = [];
 let camReportId = null;
 let camReportName = '';
 
 async function openCamera() {
-  // Save current report context
-  camReportId = currentReportId;
+  camReportId   = currentReportId;
   camReportName = document.getElementById('f-name')?.value?.trim() || '';
-  const proc = document.getElementById('f-proc')?.value || 'ENDOSCOPIA';
-
+  const proc    = document.getElementById('f-proc')?.value || 'ENDOSCOPIA';
   showScreen('camera');
-  document.getElementById('cam-report-name').textContent = camReportName || 'Sin nombre — guarda el reporte primero';
-  document.getElementById('cam-report-proc').textContent = camReportId ? proc : 'Abre un reporte para asociar las capturas';
-
-  camPhotos = [];
-  updatePhotoStrip();
+  camSwitchTab('live');
+  document.getElementById('report-name-footer').textContent =
+    camReportName ? `· ${proc} · ${camReportName}` : '· Sin reporte activo';
   await initCamera();
+}
+
+function closeCamera() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') stopRecord();
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  clearInterval(recTimerInterval);
+  showScreen(camReportId ? 'editor' : 'dashboard');
+}
+
+function camSwitchTab(tab) {
+  const isLive = tab === 'live';
+  document.getElementById('cam-tab-live-content').style.display    = isLive ? 'flex' : 'none';
+  document.getElementById('cam-tab-gallery-content').style.display = isLive ? 'none' : 'flex';
+  document.getElementById('cam-tab-live').style.color              = isLive ? 'var(--accent)' : 'var(--muted)';
+  document.getElementById('cam-tab-live').style.borderBottom       = isLive ? '2px solid var(--accent)' : '2px solid transparent';
+  document.getElementById('cam-tab-gallery').style.color           = !isLive ? 'var(--accent)' : 'var(--muted)';
+  document.getElementById('cam-tab-gallery').style.borderBottom    = !isLive ? '2px solid var(--accent)' : '2px solid transparent';
+  if (!isLive) renderGallery();
 }
 
 async function initCamera() {
   try {
-    // Enumerate video devices
     const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(d => d.kind === 'videoinput');
-
+    const vids = devices.filter(d => d.kind === 'videoinput');
     const sel = document.getElementById('cam-select');
     sel.innerHTML = '';
-    if (!videoDevices.length) {
-      sel.innerHTML = '<option value="">No se detectaron cámaras</option>';
+    if (!vids.length) {
+      sel.innerHTML = '<option>No se detectaron camaras</option>';
+      showNoSignal('No se encontraron dispositivos de video.');
       return;
     }
-
-    videoDevices.forEach((d, i) => {
+    let preferredId = null;
+    vids.forEach((d, i) => {
       const opt = document.createElement('option');
       opt.value = d.deviceId;
-      opt.textContent = d.label || `Cámara ${i + 1}`;
-      // Auto-select UVC/capture device if found
-      if (d.label.toLowerCase().includes('usb') ||
-          d.label.toLowerCase().includes('capture') ||
-          d.label.toLowerCase().includes('uvc') ||
-          d.label.toLowerCase().includes('genki') ||
-          d.label.toLowerCase().includes('steren') ||
-          d.label.toLowerCase().includes('video')) {
-        opt.selected = true;
+      opt.textContent = d.label || `Camara ${i+1}`;
+      const lbl = d.label.toLowerCase();
+      if (!preferredId && (lbl.includes('usb')||lbl.includes('capture')||lbl.includes('uvc')||
+          lbl.includes('steren')||lbl.includes('hdmi')||lbl.includes('cam link'))) {
+        preferredId = d.deviceId; opt.selected = true;
       }
       sel.appendChild(opt);
     });
-
-    await startStream(sel.value || videoDevices[0].deviceId);
-  } catch(e) {
-    console.error('Camera init error:', e);
-    showNoSignal(e.message);
-  }
+    await startStream(preferredId || vids[0].deviceId);
+  } catch(e) { showNoSignal(e.message); }
 }
 
 async function startStream(deviceId) {
-  // Stop existing stream
-  if (camStream) {
-    camStream.getTracks().forEach(t => t.stop());
-    camStream = null;
-  }
-
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
   try {
-    const constraints = {
-      video: {
-        deviceId: deviceId ? { exact: deviceId } : undefined,
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
-        frameRate: { ideal: 30 }
-      },
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: deviceId ? { exact: deviceId } : undefined,
+               width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
       audio: true
-    };
-
-    camStream = await navigator.mediaDevices.getUserMedia(constraints);
-    const video = document.getElementById('cam-video');
-    video.srcObject = camStream;
+    });
+    document.getElementById('cam-video').srcObject = camStream;
     document.getElementById('cam-nosignal').style.display = 'none';
-    document.getElementById('cam-sub').textContent = 'En vivo · ' + (document.getElementById('cam-select').selectedOptions[0]?.text || '');
-
-    // Re-enumerate with labels now available
     const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(d => d.kind === 'videoinput');
     const sel = document.getElementById('cam-select');
-    const current = sel.value;
     sel.innerHTML = '';
-    videoDevices.forEach(d => {
+    devices.filter(d => d.kind === 'videoinput').forEach(d => {
       const opt = document.createElement('option');
-      opt.value = d.deviceId;
-      opt.textContent = d.label || d.deviceId.slice(0,8);
-      if (d.deviceId === current) opt.selected = true;
+      opt.value = d.deviceId; opt.textContent = d.label || d.deviceId.slice(0,10);
+      if (d.deviceId === deviceId) opt.selected = true;
       sel.appendChild(opt);
     });
+    document.getElementById('cam-sub').textContent = 'En vivo - ' + (sel.selectedOptions[0]?.text || '');
   } catch(e) {
-    console.error('Stream error:', e);
     showNoSignal(e.name === 'NotAllowedError'
-      ? 'Permiso denegado. Permite el acceso a la cámara en Safari → Ajustes.'
-      : e.message);
+      ? 'Permiso denegado. Ajustes > Safari > Camara > Permitir.' : e.message);
   }
 }
 
-async function switchCamera(deviceId) {
-  if (deviceId) await startStream(deviceId);
-}
+async function switchCamera(deviceId) { if (deviceId) await startStream(deviceId); }
 
 function showNoSignal(msg) {
   document.getElementById('cam-nosignal').style.display = 'flex';
-  const div = document.getElementById('cam-nosignal').querySelector('div:nth-child(3)');
-  if (div && msg) div.textContent = msg;
+  if (msg) document.getElementById('cam-nosignal-msg').textContent = msg;
 }
 
-// ── CAPTURE PHOTO ──────────────────────────────────────────────
 function capturePhoto() {
   const video = document.getElementById('cam-video');
-  if (!video.srcObject) { toast('⚠', 'No hay señal de video'); return; }
-
-  // Flash effect
+  if (!video.srcObject || !video.videoWidth) { toast('\u26a0', 'Sin senal de video'); return; }
   const flash = document.getElementById('cam-flash');
   flash.style.opacity = '0.8';
-  setTimeout(() => flash.style.opacity = '0', 150);
-
-  // Draw frame to canvas
+  setTimeout(() => flash.style.opacity = '0', 120);
   const canvas = document.createElement('canvas');
-  canvas.width  = video.videoWidth  || 1920;
-  canvas.height = video.videoHeight || 1080;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
   canvas.toBlob(blob => {
     const url = URL.createObjectURL(blob);
-    camPhotos.push({ blob, url });
-    updatePhotoStrip();
-    toast('📷', `Foto ${camPhotos.length} capturada`);
+    camPhotos.push({ blob, url, selected: false });
+    const n = camPhotos.length;
+    document.getElementById('gallery-count').textContent = n;
+    document.getElementById('photo-count-num').textContent = n;
+    document.getElementById('photo-count-badge').style.display = 'block';
+    toast('\ud83d\udcf7', `Foto ${n} capturada`);
   }, 'image/jpeg', 0.92);
 }
 
-function updatePhotoStrip() {
-  const strip = document.getElementById('cam-thumbs');
-  const badge = document.getElementById('photo-count-badge');
-  const num   = document.getElementById('photo-count-num');
-
-  // Clear existing thumbs (keep label)
-  [...strip.querySelectorAll('.cam-thumb')].forEach(el => el.remove());
-
-  if (!camPhotos.length) {
-    badge.style.display = 'none';
-    return;
-  }
-
-  badge.style.display = 'flex';
-  num.textContent = camPhotos.length;
-
+function renderGallery() {
+  const grid = document.getElementById('gallery-grid');
+  document.getElementById('gallery-empty').style.display = camPhotos.length ? 'none' : 'block';
+  [...grid.querySelectorAll('.cam-gallery-item')].forEach(el => el.remove());
   camPhotos.forEach((p, i) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'cam-thumb';
-    wrap.style.cssText = 'position:relative;flex-shrink:0;';
-    const img = document.createElement('img');
-    img.src = p.url;
-    img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:6px;border:1.5px solid var(--border);cursor:pointer;';
-    img.onclick = () => window.open(p.url, '_blank');
-    const del = document.createElement('div');
-    del.textContent = '✕';
-    del.style.cssText = 'position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--danger);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;cursor:pointer;z-index:2;';
-    del.onclick = (e) => { e.stopPropagation(); camPhotos.splice(i,1); updatePhotoStrip(); };
-    wrap.appendChild(img);
-    wrap.appendChild(del);
-    strip.appendChild(wrap);
+    const item = document.createElement('div');
+    item.className = 'cam-gallery-item' + (p.selected ? ' selected' : '');
+    item.innerHTML = `<img src="${p.url}" loading="lazy"><div class="sel-overlay">\u2713</div><div class="item-num">${i+1}</div>`;
+    item.onclick = () => { camPhotos[i].selected = !camPhotos[i].selected; renderGallery(); };
+    grid.appendChild(item);
   });
+  updateSelCount();
 }
 
-// ── RECORD VIDEO ───────────────────────────────────────────────
-function toggleRecord() {
-  if (mediaRecorder && mediaRecorder.state === 'recording') {
-    pauseRecord();
-  } else {
-    startRecord();
+function camSelectAll()  { camPhotos.forEach(p => p.selected = true);  renderGallery(); }
+function camClearSel()   { camPhotos.forEach(p => p.selected = false); renderGallery(); }
+function updateSelCount() {
+  document.getElementById('sel-count').textContent = camPhotos.filter(p => p.selected).length;
+}
+
+function camDeleteSelected() {
+  camPhotos = camPhotos.filter(p => !p.selected);
+  document.getElementById('gallery-count').textContent = camPhotos.length;
+  document.getElementById('photo-count-num').textContent = camPhotos.length;
+  if (!camPhotos.length) document.getElementById('photo-count-badge').style.display = 'none';
+  renderGallery();
+  toast('\ud83d\uddd1', 'Fotos eliminadas');
+}
+
+async function saveSelectedToReport() {
+  const selected = camPhotos.filter(p => p.selected);
+  if (!selected.length) { toast('\u26a0', 'Selecciona al menos una foto'); return; }
+  if (!camReportId) { toast('\u26a0', 'Sin reporte activo'); return; }
+  const btn = document.getElementById('btn-save-sel');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  let saved = 0;
+  for (const photo of selected) {
+    const slotIdx = imgSlots.findIndex(s => !s);
+    if (slotIdx === -1) { toast('\u26a0', 'Reporte lleno (max 12)'); break; }
+    const file = new File([photo.blob], `cap-${Date.now()}-${saved}.jpg`, { type: 'image/jpeg' });
+    await uploadImgToReport(file, slotIdx, camReportId);
+    saved++;
   }
+  camPhotos = camPhotos.map(p => p.selected ? { ...p, selected: false } : p);
+  renderGallery();
+  toast('\u2713', `${saved} foto${saved>1?'s':''} agregada${saved>1?'s':''} al reporte`);
+  btn.disabled = false; btn.textContent = '\ud83d\udcbe Agregar al reporte';
+}
+
+async function uploadImgToReport(file, idx, reportId) {
+  const path = `${currentUser.id}/${reportId}/${idx}.jpg`;
+  const { error: upErr } = await sb.storage.from('endoscopy-images').upload(path, file, { upsert: true });
+  if (upErr) { toast('\u26a0', 'Storage: ' + upErr.message); return; }
+  await sb.from('report_images').delete().eq('report_id', reportId).eq('slot_index', idx);
+  await sb.from('report_images').insert({ report_id: reportId, storage_path: path, slot_index: idx, label: '' });
+  if (reportId === currentReportId) {
+    imgSlots[idx] = { url: URL.createObjectURL(file), path, label: '' };
+    refreshImgGrid();
+  }
+}
+
+function toggleRecord() {
+  if (!mediaRecorder || mediaRecorder.state === 'inactive') startRecord();
+  else if (mediaRecorder.state === 'recording') pauseRecord();
+  else resumeRecord();
 }
 
 function startRecord() {
-  if (!camStream) { toast('⚠', 'No hay señal de video'); return; }
-
+  if (!camStream) { toast('\u26a0', 'Sin senal de video'); return; }
   recordedChunks = [];
-  const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')
-    ? 'video/mp4;codecs=avc1'
-    : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-    ? 'video/webm;codecs=vp9'
-    : 'video/webm';
-
-  mediaRecorder = new MediaRecorder(camStream, { mimeType });
+  const mime = ['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm']
+    .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
+  mediaRecorder = new MediaRecorder(camStream, { mimeType: mime });
   mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
   mediaRecorder.onstop = onRecordStop;
   mediaRecorder.start(1000);
-
-  // UI
   document.getElementById('rec-indicator').style.display = 'flex';
   document.getElementById('rec-inner').style.borderRadius = '3px';
   document.getElementById('btn-stop').style.display = 'flex';
   recSeconds = 0;
   recTimerInterval = setInterval(() => {
     recSeconds++;
-    const m = String(Math.floor(recSeconds/60)).padStart(2,'0');
-    const s = String(recSeconds%60).padStart(2,'0');
-    document.getElementById('rec-timer').textContent = `${m}:${s}`;
+    document.getElementById('rec-timer').textContent =
+      String(Math.floor(recSeconds/60)).padStart(2,'0') + ':' + String(recSeconds%60).padStart(2,'0');
   }, 1000);
-  toast('🔴', 'Grabando...');
+  toast('\ud83d\udd34', 'Grabando...');
 }
 
 function pauseRecord() {
-  if (mediaRecorder?.state === 'recording') {
-    mediaRecorder.pause();
-    clearInterval(recTimerInterval);
-    document.getElementById('rec-inner').style.background = 'var(--warn)';
-    toast('⏸', 'Grabación en pausa');
-  } else if (mediaRecorder?.state === 'paused') {
-    mediaRecorder.resume();
-    recTimerInterval = setInterval(() => {
-      recSeconds++;
-      const m = String(Math.floor(recSeconds/60)).padStart(2,'0');
-      const s = String(recSeconds%60).padStart(2,'0');
-      document.getElementById('rec-timer').textContent = `${m}:${s}`;
-    }, 1000);
-    document.getElementById('rec-inner').style.background = 'var(--danger)';
-    toast('▶', 'Grabación reanudada');
-  }
+  mediaRecorder.pause(); clearInterval(recTimerInterval);
+  document.getElementById('rec-inner').style.background = 'var(--warn)';
+  toast('\u23f8', 'Pausa');
+}
+
+function resumeRecord() {
+  mediaRecorder.resume();
+  recTimerInterval = setInterval(() => {
+    recSeconds++;
+    document.getElementById('rec-timer').textContent =
+      String(Math.floor(recSeconds/60)).padStart(2,'0') + ':' + String(recSeconds%60).padStart(2,'0');
+  }, 1000);
+  document.getElementById('rec-inner').style.background = 'var(--danger)';
 }
 
 function stopRecord() {
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    mediaRecorder.stop();
-    clearInterval(recTimerInterval);
+    mediaRecorder.stop(); clearInterval(recTimerInterval);
     document.getElementById('rec-indicator').style.display = 'none';
     document.getElementById('rec-inner').style.borderRadius = '50%';
     document.getElementById('rec-inner').style.background = 'var(--danger)';
@@ -1592,77 +1625,14 @@ function stopRecord() {
 
 function onRecordStop() {
   if (!recordedChunks.length) return;
-  const mimeType = recordedChunks[0].type || 'video/webm';
-  const blob = new Blob(recordedChunks, { type: mimeType });
-  const ext  = mimeType.includes('mp4') ? 'mp4' : 'webm';
-  const url  = URL.createObjectURL(blob);
-
-  // Auto-download video
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `endoscopia-${Date.now()}.${ext}`;
+  const mime = recordedChunks[0].type || 'video/webm';
+  const blob = new Blob(recordedChunks, { type: mime });
+  const ext  = mime.includes('mp4') ? 'mp4' : 'webm';
+  const a    = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `endoscopia-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.${ext}`;
   a.click();
-  toast('✓', `Video guardado (${Math.round(blob.size/1024/1024*10)/10} MB)`);
-}
-
-// ── SAVE PHOTOS TO REPORT ──────────────────────────────────────
-async function saveAllToReport() {
-  if (!camPhotos.length) { toast('⚠', 'No hay fotos para guardar'); return; }
-  if (!camReportId) { toast('⚠', 'No hay reporte activo — abre un reporte primero'); return; }
-
-  const btn = document.getElementById('btn-save-report');
-  btn.disabled = true; btn.textContent = 'Guardando...';
-
-  // Find first empty slots
-  let saved = 0;
-  for (const photo of camPhotos) {
-    const slotIdx = imgSlots.findIndex(s => !s);
-    if (slotIdx === -1) { toast('⚠', 'No hay slots disponibles en el reporte (máx 12)'); break; }
-
-    const file = new File([photo.blob], `cap-${Date.now()}.jpg`, { type: 'image/jpeg' });
-    await uploadImgToReport(file, slotIdx, camReportId);
-    saved++;
-  }
-
-  toast('✓', `${saved} foto${saved>1?'s':''} guardada${saved>1?'s':''} en el reporte`);
-  btn.disabled = false; btn.textContent = '💾 Guardar en reporte';
-  camPhotos = [];
-  updatePhotoStrip();
-}
-
-async function uploadImgToReport(file, idx, reportId) {
-  const ext  = 'jpg';
-  const path = `${currentUser.id}/${reportId}/${idx}.${ext}`;
-
-  const { error: upErr } = await sb.storage.from('endoscopy-images').upload(path, file, { upsert: true });
-  if (upErr) { toast('⚠', 'Storage: ' + upErr.message); return; }
-
-  await sb.from('report_images').delete()
-    .eq('report_id', reportId).eq('slot_index', idx);
-  await sb.from('report_images').insert({
-    report_id: reportId, storage_path: path, slot_index: idx, label: ''
-  });
-
-  // Update local slots if same report is open
-  if (reportId === currentReportId) {
-    const localUrl = URL.createObjectURL(file);
-    imgSlots[idx] = { url: localUrl, path, label: '' };
-    refreshImgGrid();
-  }
-}
-
-function closeCamera() {
-  // Stop all tracks
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') stopRecord();
-  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
-  clearInterval(recTimerInterval);
-
-  // Return to editor if report was open, else dashboard
-  if (camReportId) {
-    showScreen('editor');
-  } else {
-    showScreen('dashboard');
-  }
+  toast('\u2713', `Video descargado (${(blob.size/1024/1024).toFixed(1)} MB)`);
 }
 
 </script>
