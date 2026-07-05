@@ -440,6 +440,25 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
       <div class="stat"><div class="n" id="stat-endo">—</div><div class="l">Endoscopias</div></div>
       <div class="stat"><div class="n" id="stat-colo">—</div><div class="l">Colonoscopias</div></div>
     </div>
+    <div class="stat" id="monthly-chart" style="margin-bottom:20px;padding:16px;"></div>
+    <!-- Search + filter bar -->
+    <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;">
+      <div style="flex:1;position:relative;">
+        <input id="search-input" type="text" placeholder="🔍  Buscar paciente..." oninput="filterReports(this.value)"
+          style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);
+          padding:10px 14px;border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;">
+      </div>
+      <select id="filter-proc" onchange="filterReports(document.getElementById('search-input').value)"
+        style="background:var(--surface);border:1px solid var(--border);color:var(--text);
+        padding:10px 12px;border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none;">
+        <option value="">Todos</option>
+        <option value="ENDOSCOPIA">Endoscopia</option>
+        <option value="COLONOSCOPIA">Colonoscopia</option>
+        <option value="CPRE">CPRE</option>
+        <option value="RECTOSIGMOIDOSCOPIA">Rectosig.</option>
+      </select>
+    </div>
+
     <div class="sec-title">Estudios Recientes</div>
     <div class="report-list" id="report-list">
       <div class="empty-state"><div class="ico">🔬</div><p>Cargando estudios...</p></div>
@@ -1024,7 +1043,6 @@ async function bootDashboard() {
 }
 
 async function loadReports() {
-  console.log('loadReports start, currentUser:', currentUser);
   const timeoutPromise = new Promise((_, reject) =>
     setTimeout(() => reject(new Error('Timeout: la consulta tardó demasiado')), 8000)
   );
@@ -1032,62 +1050,33 @@ async function loadReports() {
     .select('id,patient_name,patient_age,patient_sex,procedure,study_date,status,created_at')
     .eq('user_id', currentUser.id)
     .order('created_at', { ascending: false })
-    .limit(30);
+    .limit(100);
 
   let data, error;
   try {
     const result = await Promise.race([queryPromise, timeoutPromise]);
     data = result.data; error = result.error;
   } catch (e) {
-    console.error('loadReports failed:', e);
     document.getElementById('report-list').innerHTML =
       `<div class="empty-state"><div class="ico">⚠️</div><p>${e.message}</p></div>`;
     return;
   }
 
   if (error) {
-    console.error('loadReports supabase error:', error);
     document.getElementById('report-list').innerHTML =
       `<div class="empty-state"><div class="ico">⚠️</div><p>Error: ${error.message}</p></div>`;
     return;
   }
 
-  // Stats
-  const total = data.length;
-  const endo  = data.filter(r => r.procedure === 'ENDOSCOPIA').length;
-  const colo  = data.filter(r => r.procedure === 'COLONOSCOPIA').length;
-  document.getElementById('stat-total').textContent = total;
-  document.getElementById('stat-endo').textContent  = endo;
-  document.getElementById('stat-colo').textContent  = colo;
+  allReports = data;
+  renderStats(data);
 
-  // List
-  const list = document.getElementById('report-list');
   if (!data.length) {
-    list.innerHTML = `<div class="empty-state"><div class="ico">🔬</div><p>Aún no hay estudios. Crea el primero.</p></div>`;
+    document.getElementById('report-list').innerHTML =
+      `<div class="empty-state"><div class="ico">🔬</div><p>Aún no hay estudios. Crea el primero.</p></div>`;
     return;
   }
-  list.innerHTML = data.map(r => {
-    const proc = r.procedure || 'ENDOSCOPIA';
-    const badgeClass = proc === 'COLONOSCOPIA' ? 'b-colo' : 'b-endo';
-    const statusBadge = r.status === 'complete'
-      ? '<span class="badge b-done">✓ Completo</span>'
-      : '<span class="badge b-draft">Borrador</span>';
-    const date = r.study_date
-      ? new Date(r.study_date).toLocaleDateString('es-MX')
-      : new Date(r.created_at).toLocaleDateString('es-MX');
-    const ico = proc === 'COLONOSCOPIA' ? '🩺' : '🔬';
-    return `<div class="ri" onclick="goEditor('${r.id}')">
-      <div class="ri-ico">${ico}</div>
-      <div class="ri-info">
-        <div class="ri-name">${r.patient_name || 'Sin nombre'}</div>
-        <div class="ri-meta">${date} · ${proc} · ${r.patient_age || '—'} años · ${r.patient_sex || '—'}</div>
-      </div>
-      <div class="ri-badges">
-        <span class="badge ${badgeClass}">${proc}</span>
-        ${statusBadge}
-      </div>
-    </div>`;
-  }).join('');
+  renderReportList(data);
 }
 
 // ── Editor ─────────────────────────────────────────────────────
@@ -1917,6 +1906,98 @@ function sendEmail() {
   closeModal('email-modal');
   toast('📧', 'Abriendo correo... recuerda adjuntar el PDF');
 }
+
+
+// ══════════════════════════════════════════
+//  BÚSQUEDA Y FILTRO DE REPORTES
+// ══════════════════════════════════════════
+let allReports = [];
+
+function filterReports(query) {
+  const proc = document.getElementById('filter-proc')?.value || '';
+  const q = query.toLowerCase().trim();
+  const filtered = allReports.filter(r => {
+    const matchName = !q || (r.patient_name || '').toLowerCase().includes(q);
+    const matchProc = !proc || r.procedure === proc;
+    return matchName && matchProc;
+  });
+  renderReportList(filtered);
+}
+
+function renderReportList(data) {
+  const list = document.getElementById('report-list');
+  if (!data.length) {
+    list.innerHTML = `<div class="empty-state"><div class="ico">🔍</div><p>Sin resultados.</p></div>`;
+    return;
+  }
+  list.innerHTML = data.map(r => {
+    const proc = r.procedure || 'ENDOSCOPIA';
+    const badgeClass = proc === 'COLONOSCOPIA' ? 'b-colo' : 'b-endo';
+    const statusBadge = r.status === 'complete'
+      ? '<span class="badge b-done">✓ Completo</span>'
+      : '<span class="badge b-draft">Borrador</span>';
+    const date = r.study_date
+      ? new Date(r.study_date).toLocaleDateString('es-MX')
+      : new Date(r.created_at).toLocaleDateString('es-MX');
+    const ico = proc === 'COLONOSCOPIA' ? '🩺' : '🔬';
+    return `<div class="ri" onclick="goEditor('${r.id}')">
+      <div class="ri-ico">${ico}</div>
+      <div class="ri-info">
+        <div class="ri-name">${r.patient_name || 'Sin nombre'}</div>
+        <div class="ri-meta">${date} · ${proc} · ${r.patient_age || '—'} años · ${r.patient_sex || '—'}</div>
+      </div>
+      <div class="ri-badges">
+        <span class="badge ${badgeClass}">${proc}</span>
+        ${statusBadge}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  ESTADÍSTICAS AVANZADAS
+// ══════════════════════════════════════════
+function renderStats(data) {
+  const total = data.length;
+  const endo  = data.filter(r => r.procedure === 'ENDOSCOPIA').length;
+  const colo  = data.filter(r => r.procedure === 'COLONOSCOPIA').length;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-endo').textContent  = endo;
+  document.getElementById('stat-colo').textContent  = colo;
+
+  // Monthly chart
+  const byMonth = {};
+  data.forEach(r => {
+    const d = new Date(r.study_date || r.created_at);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    byMonth[key] = (byMonth[key] || 0) + 1;
+  });
+
+  const chartEl = document.getElementById('monthly-chart');
+  if (!chartEl) return;
+
+  const sorted = Object.entries(byMonth).sort((a,b) => a[0].localeCompare(b[0])).slice(-6);
+  if (!sorted.length) return;
+  const max = Math.max(...sorted.map(([,v]) => v));
+
+  chartEl.innerHTML = `
+    <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent);margin-bottom:12px;">
+      Estudios por mes
+    </div>
+    <div style="display:flex;align-items:flex-end;gap:8px;height:60px;">
+      ${sorted.map(([month, count]) => {
+        const pct = max ? (count / max * 100) : 0;
+        const label = month.slice(5); // MM
+        const months = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+        return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="font-size:10px;color:var(--muted);">${count}</div>
+          <div style="width:100%;background:var(--accent);border-radius:4px 4px 0 0;height:${Math.max(pct*0.5,4)}px;opacity:0.85;"></div>
+          <div style="font-size:9px;color:var(--muted);">${months[parseInt(label)]}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+
 
 </script>
 </body>
