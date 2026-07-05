@@ -2,8 +2,15 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+  <!-- PWA / iPad icon -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ENDOSCOP IA">
+  <meta name="theme-color" content="#080d18">
+  <link rel="apple-touch-icon" href="icon.png">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>INSIDE — Reportes Endoscópicos</title>
+<title>ENDOSCOP IA</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -349,9 +356,9 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 <div id="auth" class="screen active">
   <div class="auth-card">
     <div class="auth-logo">
-      <div class="auth-logo-icon">I</div>
-      <h1><span>IN</span>SIDE</h1>
-      <p>Sistema de Reportes Endoscópicos</p>
+      <div class="auth-logo-icon" style="font-size:22px;letter-spacing:-1px;">EN</div>
+      <h1><span>ENDOSCOP</span> IA</h1>
+      <p>Sistema Integral de Diagnóstico Endoscópico</p>
     </div>
     <div class="auth-box">
       <div class="auth-title" id="auth-title">Iniciar sesión</div>
@@ -384,10 +391,10 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 <div id="dashboard" class="screen">
   <nav class="topnav">
     <div class="logo-wrap">
-      <div class="logo-icon">I</div>
+      <div class="logo-icon" style="font-size:10px;letter-spacing:-1px;">EN</div>
       <div>
-        <div class="logo-name"><span>IN</span>SIDE</div>
-        <div class="logo-sub">Reportes Endoscópicos</div>
+        <div class="logo-name"><span>ENDOSCOP</span> IA</div>
+        <div class="logo-sub">Diagnóstico Endoscópico</div>
       </div>
     </div>
     <div class="nav-right">
@@ -398,7 +405,7 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
   <div class="body">
     <div class="welcome">
       <h1 id="welcome-name">Bienvenido</h1>
-      <p>Sistema Integral de Diagnóstico Endoscópico · San Miguel Chapultepec</p>
+      <p>ENDOSCOP IA · San Miguel Chapultepec</p>
       <div class="acts">
         <button class="btn btn-primary" onclick="goEditor(null)">＋ Nuevo Reporte</button>
       </div>
@@ -576,9 +583,9 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
       <div class="rp" id="rp">
         <div class="rp-hdr">
           <div class="rp-hdr-logo">
-            <div class="rp-hdr-ico">I</div>
+            <div class="rp-hdr-ico" style="font-size:14px;letter-spacing:-1px;">EN</div>
             <div>
-              <div class="rp-doc">JOSE GUTIERREZ SOTRES &nbsp; INSIDE</div>
+              <div class="rp-doc">JOSE GUTIERREZ SOTRES &nbsp;&nbsp;<span style="color:#00c2a8;">ENDOSCOP IA</span></div>
               <div class="rp-addr">GELATI 33-101 · SAN MIGUEL CHAPULTEPEC · 11850</div>
             </div>
           </div>
