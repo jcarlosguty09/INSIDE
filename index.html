@@ -1032,11 +1032,19 @@ let saveTimeout = null;
 const MAX_SLOTS = 12;
 
 // ── Boot ───────────────────────────────────────────────────────
+// Show auth screen immediately on load
+showScreen('auth');
+
 (async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (session?.user) {
-    currentUser = session.user;
-    await bootDashboard();
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session?.user) {
+      currentUser = session.user;
+      await bootDashboard();
+    }
+  } catch(e) {
+    console.error('Boot error:', e);
+    showScreen('auth');
   }
 })();
 
