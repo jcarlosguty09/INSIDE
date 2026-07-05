@@ -41,6 +41,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-
 /* ── SCREENS ── */
 .screen{display:none;height:100vh;flex-direction:column;overflow:hidden;}
 .screen.active{display:flex;}
+#auth{display:flex!important;}
+#auth.hide{display:none!important;}
+#auth{display:flex!important;}
+#auth.hidden{display:none!important;}
 
 /* ════════════════════════════════
    AUTH SCREEN
@@ -1092,6 +1096,7 @@ async function authSubmit() {
 
 // ── Dashboard ──────────────────────────────────────────────────
 async function bootDashboard() {
+  document.getElementById('auth').classList.add('hidden');
   showScreen('dashboard');
   const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
   document.getElementById('welcome-name').textContent = `Buenos días, ${name}`;
@@ -1554,20 +1559,39 @@ async function urlToBase64(url) {
 
 // ── Auth helpers ───────────────────────────────────────────────
 function confirmLogout() { openModal('logout-modal'); }
-async function doLogout() { closeModal('logout-modal'); await sb.auth.signOut(); }
+async function doLogout() {
+  closeModal('logout-modal');
+  await sb.auth.signOut();
+  document.getElementById('auth').classList.remove('hidden');
+}
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ── Screens ────────────────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => {
+    if (s.id === 'auth') return; // auth managed separately
     s.classList.remove('active');
     s.style.display = 'none';
   });
   const el = document.getElementById(id);
   el.classList.add('active');
   el.style.display = 'flex';
+  // Hide auth when showing another screen
+  if (id !== 'auth') {
+    const auth = document.getElementById('auth');
+    if (auth) { auth.classList.add('hide'); auth.style.display='none'; }
+  } else {
+    const auth = document.getElementById('auth');
+    if (auth) { auth.classList.remove('hide'); auth.style.display='flex'; }
+  }
 }
+
+// Call on DOM ready to ensure auth is visible initially
+document.addEventListener('DOMContentLoaded', () => {
+  const auth = document.getElementById('auth');
+  if (auth) auth.style.display = 'flex';
+});
 
 // ── Toast ──────────────────────────────────────────────────────
 let toastTimer;
