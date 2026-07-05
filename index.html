@@ -862,20 +862,24 @@ const MAX_SLOTS = 12;
 // ── Boot ───────────────────────────────────────────────────────
 // Boot — script at end of body, DOM ready
 showScreen('auth');
+console.log('Boot: auth shown');
 (async () => {
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) {
+      console.log('Boot: session found, going to dashboard');
       currentUser = session.user;
       await bootDashboard();
     }
   } catch(e) { console.error('Boot error:', e); }
   sb.auth.onAuthStateChange(async (event, session) => {
     if (event === 'SIGNED_IN' && session?.user) {
+      console.log('Auth state: SIGNED_IN');
       currentUser = session.user;
       await bootDashboard();
     }
     if (event === 'SIGNED_OUT') {
+      console.log('Auth state: SIGNED_OUT');
       currentUser = null;
       showScreen('auth');
     }
