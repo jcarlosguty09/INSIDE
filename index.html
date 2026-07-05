@@ -1032,10 +1032,11 @@ let saveTimeout = null;
 const MAX_SLOTS = 12;
 
 // ── Boot ───────────────────────────────────────────────────────
-// Show auth screen immediately on load
-showScreen('auth');
+document.addEventListener('DOMContentLoaded', async () => {
+  // Show auth immediately
+  showScreen('auth');
 
-(async () => {
+  // Check existing session
   try {
     const { data: { session } } = await sb.auth.getSession();
     if (session?.user) {
@@ -1044,19 +1045,19 @@ showScreen('auth');
     }
   } catch(e) {
     console.error('Boot error:', e);
-    showScreen('auth');
   }
-})();
 
-sb.auth.onAuthStateChange(async (event, session) => {
-  if (event === 'SIGNED_IN' && session?.user) {
-    currentUser = session.user;
-    await bootDashboard();
-  }
-  if (event === 'SIGNED_OUT') {
-    currentUser = null;
-    showScreen('auth');
-  }
+  // Listen for auth changes
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session?.user) {
+      currentUser = session.user;
+      await bootDashboard();
+    }
+    if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      showScreen('auth');
+    }
+  });
 });
 
 // ── Auth ───────────────────────────────────────────────────────
