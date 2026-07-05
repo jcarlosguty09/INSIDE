@@ -210,7 +210,7 @@ input[type=file]{display:none;}
 </head>
 <body>
 
-<div id="auth" class="screen active" style="display:flex;min-height:100vh;width:100%;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 20%,rgba(56,189,248,0.12) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(0,102,204,0.1) 0%,transparent 60%),#050d1f;">
+<div id="auth" style="display:flex;min-height:100vh;width:100%;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at 30% 20%,rgba(56,189,248,0.12) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(0,102,204,0.1) 0%,transparent 60%),#050d1f;">
   <div class="auth-card">
     <div class="auth-logo">
       <img src="logo-login.png" style="width:160px;height:160px;object-fit:contain;display:block;margin:0 auto 8px;">
@@ -1395,7 +1395,19 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 
 // ── Screens ────────────────────────────────────────────────────
 function showScreen(id) {
-  ['auth','dashboard','editor','camera'].forEach(sid => {
+  // Handle auth separately - it's always visible unless we're on another screen
+  const auth = document.getElementById('auth');
+  if (id === 'auth') {
+    if (auth) auth.style.display = 'flex';
+    ['dashboard','editor','camera'].forEach(sid => {
+      const el = document.getElementById(sid);
+      if (el) { el.classList.remove('active'); el.style.display = 'none'; }
+    });
+    return;
+  }
+  // Hide auth, show target screen
+  if (auth) auth.style.display = 'none';
+  ['dashboard','editor','camera'].forEach(sid => {
     const el = document.getElementById(sid);
     if (!el) return;
     if (sid === id) {
