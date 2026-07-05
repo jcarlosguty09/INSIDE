@@ -858,6 +858,7 @@ const MAX_SLOTS = 12;
 
 // ── Boot ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  showScreen('auth'); // Always show auth first
 
   // Check existing session
   try {
@@ -2064,6 +2065,27 @@ async function exportToWord() {
       La evolución hacia mejores diagnósticos
     </div>
   </div>
+<script>
+// Force auth visible - runs after everything else
+(function() {
+  function ensureAuthVisible() {
+    var auth = document.getElementById('auth');
+    if (!auth) return;
+    // Only show auth if no other screen is active
+    var anyActive = ['dashboard','editor','camera'].some(function(id) {
+      var el = document.getElementById(id);
+      return el && el.style.display === 'flex';
+    });
+    if (!anyActive) {
+      auth.style.display = 'flex';
+    }
+  }
+  // Run immediately and after a short delay
+  ensureAuthVisible();
+  setTimeout(ensureAuthVisible, 500);
+  setTimeout(ensureAuthVisible, 1500);
+})();
+</script>
 </body>
 </html>`;
 
@@ -2208,6 +2230,27 @@ function initPinchZoom() {
 }
 
 
+</script>
+<script>
+// Force auth visible - runs after everything else
+(function() {
+  function ensureAuthVisible() {
+    var auth = document.getElementById('auth');
+    if (!auth) return;
+    // Only show auth if no other screen is active
+    var anyActive = ['dashboard','editor','camera'].some(function(id) {
+      var el = document.getElementById(id);
+      return el && el.style.display === 'flex';
+    });
+    if (!anyActive) {
+      auth.style.display = 'flex';
+    }
+  }
+  // Run immediately and after a short delay
+  ensureAuthVisible();
+  setTimeout(ensureAuthVisible, 500);
+  setTimeout(ensureAuthVisible, 1500);
+})();
 </script>
 </body>
 </html>
