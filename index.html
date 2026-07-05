@@ -35,13 +35,13 @@
   --rs:         8px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html{height:100%;}body{min-height:100%;}
+html,html,body{height:100%;margin:0;padding:0;}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
 
 /* ── SCREENS ── */
-.screen{display:none;min-height:100vh;width:100%;flex-direction:column;}
+.screen{display:none;position:fixed;top:0;left:0;right:0;bottom:0;}
 .screen.active{display:flex;}
-#auth.screen.active{display:flex!important;}
+#auth.screen.active{display:flex;flex-direction:column;}
 
 /* ════════════════════════════════
    AUTH SCREEN
