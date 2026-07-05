@@ -1574,21 +1574,7 @@ function showScreen(id) {
       el.style.display = 'none';
     }
   });
-});
-  const el = document.getElementById(id);
-  el.classList.add('active');
-  el.style.display = 'flex';
-  // Hide auth when showing another screen
-  if (id !== 'auth') {
-    const auth = document.getElementById('auth');
-    if (auth) { auth.classList.add('hide'); auth.style.display='none'; }
-  } else {
-    const auth = document.getElementById('auth');
-    if (auth) { auth.classList.remove('hide'); auth.style.display='flex'; }
-  }
 }
-
-
 
 // ── Toast ──────────────────────────────────────────────────────
 let toastTimer;
