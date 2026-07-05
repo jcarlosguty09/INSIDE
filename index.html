@@ -39,17 +39,15 @@ html,body{height:100%;overflow:hidden;}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
 
 /* ── SCREENS ── */
-.screen{display:none;height:100vh;flex-direction:column;overflow:hidden;}
-.screen.active{display:flex;}
-#auth{display:flex!important;}
+.screen{display:none;position:fixed;inset:0;flex-direction:column;overflow:hidden;}
+.screen.active{display:flex;position:fixed;inset:0;}
+#auth{display:flex!important;position:fixed;inset:0;flex-direction:column;overflow:hidden;background:radial-gradient(ellipse at 30% 20%,rgba(56,189,248,0.12) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(0,102,204,0.1) 0%,transparent 60%),var(--bg);align-items:center;justify-content:center;}
 #auth.hide{display:none!important;}
-#auth{display:flex!important;}
 #auth.hidden{display:none!important;}
 
 /* ════════════════════════════════
    AUTH SCREEN
 ════════════════════════════════ */
-#auth{align-items:center;justify-content:center;
   background:radial-gradient(ellipse at 30% 20%, rgba(56,189,248,0.12) 0%, transparent 60%),
              radial-gradient(ellipse at 70% 80%, rgba(0,102,204,0.1) 0%, transparent 60%),
              var(--bg);}
