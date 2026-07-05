@@ -35,15 +35,13 @@
   --rs:         8px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-html,body{height:100%;overflow:hidden;}
+html{height:100%;}body{min-height:100%;}
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;}
 
 /* ── SCREENS ── */
-.screen{display:none;position:fixed;inset:0;flex-direction:column;overflow:hidden;}
-.screen.active{display:flex;position:fixed;inset:0;}
-#auth{display:flex!important;position:fixed;inset:0;flex-direction:column;overflow:hidden;background:radial-gradient(ellipse at 30% 20%,rgba(56,189,248,0.12) 0%,transparent 60%),radial-gradient(ellipse at 70% 80%,rgba(0,102,204,0.1) 0%,transparent 60%),var(--bg);align-items:center;justify-content:center;}
-#auth.hide{display:none!important;}
-#auth.hidden{display:none!important;}
+.screen{display:none;min-height:100vh;width:100%;flex-direction:column;}
+.screen.active{display:flex;}
+#auth.screen.active{display:flex!important;}
 
 /* ════════════════════════════════
    AUTH SCREEN
@@ -1094,7 +1092,6 @@ async function authSubmit() {
 
 // ── Dashboard ──────────────────────────────────────────────────
 async function bootDashboard() {
-  document.getElementById('auth').classList.add('hidden');
   showScreen('dashboard');
   const name = currentUser.user_metadata?.full_name || currentUser.email.split('@')[0];
   document.getElementById('welcome-name').textContent = `Buenos días, ${name}`;
@@ -1560,18 +1557,24 @@ function confirmLogout() { openModal('logout-modal'); }
 async function doLogout() {
   closeModal('logout-modal');
   await sb.auth.signOut();
-  document.getElementById('auth').classList.remove('hidden');
-}
+  }
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
 // ── Screens ────────────────────────────────────────────────────
 function showScreen(id) {
-  document.querySelectorAll('.screen').forEach(s => {
-    if (s.id === 'auth') return; // auth managed separately
-    s.classList.remove('active');
-    s.style.display = 'none';
+  ['auth','dashboard','editor','camera'].forEach(sid => {
+    const el = document.getElementById(sid);
+    if (!el) return;
+    if (sid === id) {
+      el.classList.add('active');
+      el.style.display = 'flex';
+    } else {
+      el.classList.remove('active');
+      el.style.display = 'none';
+    }
   });
+});
   const el = document.getElementById(id);
   el.classList.add('active');
   el.style.display = 'flex';
@@ -1585,11 +1588,7 @@ function showScreen(id) {
   }
 }
 
-// Call on DOM ready to ensure auth is visible initially
-document.addEventListener('DOMContentLoaded', () => {
-  const auth = document.getElementById('auth');
-  if (auth) auth.style.display = 'flex';
-});
+
 
 // ── Toast ──────────────────────────────────────────────────────
 let toastTimer;
