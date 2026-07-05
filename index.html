@@ -244,8 +244,8 @@ input[type=file]{display:none;}
 }
 .rp-hdr{
   background:linear-gradient(135deg,#050d1f 0%,#0a1e4a 100%);
-  color:#fff;padding:18px 22px;
-  display:flex;align-items:flex-start;justify-content:space-between;
+  color:#fff;padding:20px 24px;
+  display:flex;align-items:center;justify-content:space-between;
 }
 .rp-hdr-logo{display:flex;align-items:center;gap:12px;}
 .rp-hdr-ico{
@@ -283,8 +283,9 @@ input[type=file]{display:none;}
 .rp-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;}
 .rp-tag{padding:3px 9px;border-radius:10px;font-size:10px;font-weight:500;background:#dbeafe;color:#1e40af;}
 .rp-foot{
-  padding:14px 22px;background:#f8fafc;
+  padding:16px 24px;background:#f8fafc;
   display:flex;align-items:center;justify-content:space-between;
+  border-top:2px solid #e8f4ff;
 }
 .rp-sig-name{font-size:13px;font-weight:600;color:#0a1628;}
 .rp-sig-meta{font-size:10px;color:#8a9ab8;margin-top:2px;}
@@ -595,16 +596,27 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
 
       <!-- Report card preview -->
       <div class="rp" id="rp">
+
+        <!-- ── HEADER ── -->
         <div class="rp-hdr">
-          <div class="rp-hdr-logo">
-            <div class="rp-hdr-ico" style="font-size:13px;font-weight:800;letter-spacing:-0.5px;background:linear-gradient(135deg,#38bdf8,#0066cc);">EN</div>
+          <div style="display:flex;align-items:center;gap:14px;">
+            <img src="logo-login.png" style="width:52px;height:52px;object-fit:contain;">
             <div>
-              <div class="rp-doc">JOSE GUTIERREZ SOTRES &nbsp;&nbsp;<span style="color:#00c2a8;">ENDOSCOP IA</span></div>
-              <div class="rp-addr">GELATI 33-101 · SAN MIGUEL CHAPULTEPEC · 11850</div>
+              <div style="font-size:17px;font-weight:800;color:#fff;letter-spacing:-0.3px;">
+                DR. JOSÉ GUTIÉRREZ SOTRES
+              </div>
+              <div style="font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:1.5px;margin-top:2px;">
+                MÉDICO ENDOSCOPISTA · GELATI 33-101 · SAN MIGUEL CHAPULTEPEC
+              </div>
             </div>
           </div>
-          <div class="rp-dt" id="rp-dt">—</div>
+          <div style="text-align:right;">
+            <div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:1px;">ENDOSCOP IA</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px;" id="rp-dt">—</div>
+          </div>
         </div>
+
+        <!-- ── PATIENT BAR ── -->
         <div class="rp-pt">
           <div>
             <div class="rp-pt-name" id="rp-pt-name">Paciente —</div>
@@ -612,14 +624,18 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
           </div>
           <div class="rp-pill" id="rp-proc-pill">ENDOSCOPIA</div>
         </div>
+
+        <!-- ── STUDY DETAILS ── -->
         <div class="rp-details">
-          <div class="rp-d"><strong>Fecha del Estudio:</strong> <span id="rp-date2">—</span></div>
+          <div class="rp-d"><strong>Fecha:</strong> <span id="rp-date2">—</span></div>
           <div class="rp-d"><strong>Instrumento:</strong> <span id="rp-instr">OLYMPUS GIF H180</span></div>
-          <div class="rp-d"><strong>Dr. de Referencia:</strong> <span id="rp-ref">—</span></div>
+          <div class="rp-d"><strong>Dr. Referencia:</strong> <span id="rp-ref">—</span></div>
           <div class="rp-d"><strong>Sedación:</strong> <span id="rp-sed">INTRAVENOSA</span></div>
           <div class="rp-d"><strong>Motivo:</strong> <span id="rp-reason">—</span></div>
           <div class="rp-d"><strong>Asistente:</strong> <span id="rp-assist">—</span></div>
         </div>
+
+        <!-- ── IMAGES ── -->
         <div class="rp-imgs">
           <div class="rp-imgs-title">Imágenes Endoscópicas</div>
           <div class="rp-img-grid" id="rp-img-grid">
@@ -628,21 +644,33 @@ window.SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmF
             <div class="rp-empty-img">🔬</div>
           </div>
         </div>
+
+        <!-- ── FINDINGS ── -->
         <div class="rp-findings">
           <div class="rp-findings-title">Hallazgos</div>
           <p id="rp-findings-text">—</p>
           <div class="rp-tags" id="rp-tags"></div>
         </div>
+
+        <!-- ── PATHO NOTES ── -->
         <div id="rp-patho-sec" style="display:none;" class="rp-findings">
           <div class="rp-findings-title">Notas para Patólogo</div>
           <p id="rp-patho-text" style="font-size:12px;color:#444;line-height:1.7;"></p>
         </div>
+
+        <!-- ── FOOTER / SIGNATURE ── -->
         <div class="rp-foot">
-          <div>
-            <div class="rp-sig-name" id="rp-sig-name">Dr. José Gutiérrez Sotres</div>
-            <div class="rp-sig-meta">Médico Endoscopista · Cédula Profesional</div>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div style="width:1px;height:40px;background:#dde;"></div>
+            <div>
+              <div class="rp-sig-name" id="rp-sig-name">Dr. José Gutiérrez Sotres</div>
+              <div class="rp-sig-meta">Médico Endoscopista · Cédula Profesional</div>
+            </div>
           </div>
-          <div class="rp-qr">🔏</div>
+          <div style="font-size:10px;color:#aab;text-align:right;letter-spacing:0.5px;">
+            <div style="font-weight:600;color:#38bdf8;font-size:12px;">ENDOSCOP IA</div>
+            <div style="margin-top:3px;">La evolución hacia mejores diagnósticos</div>
+          </div>
         </div>
       </div>
 
