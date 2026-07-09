@@ -455,6 +455,25 @@ input[type=file]{display:none;}
         </div>
       </div>
 
+      <!-- Galería del estudio -->
+      <div class="form-block">
+        <div class="fb-title">📁 Galería del Estudio</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Fotos capturadas durante el procedimiento</div>
+        <button class="btn btn-secondary btn-sm btn-full" onclick="loadReportGallery()" style="margin-bottom:10px;">
+          ☁️ Cargar fotos del estudio
+        </button>
+        <div id="report-gallery-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+          <div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--dim);font-size:12px;" id="report-gallery-empty">
+            Toca "Cargar fotos" para ver las fotos capturadas con la cámara
+          </div>
+        </div>
+        <div id="report-gallery-actions" style="display:none;margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn btn-secondary btn-sm" onclick="selectAllGallery()">Sel. todo</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteSelectedGallery()">🗑 Eliminar</button>
+          <button class="btn btn-primary btn-sm" onclick="addSelectedGalleryToReport()">+ Al reporte</button>
+        </div>
+      </div>
+
     </aside>
 
     <!-- MAIN -->
@@ -711,10 +730,6 @@ input[type=file]{display:none;}
             background:linear-gradient(135deg,rgba(56,189,248,0.15),rgba(0,102,204,0.15));
             border:1.5px solid #38bdf8;color:#38bdf8;font-family:inherit;white-space:nowrap;
             transition:all 0.2s;">🧠 Analizar</button>
-          <button id="ai-auto-btn" onclick="toggleAutoAI()" title="Análisis automático cada 10s" style="
-            width:32px;height:32px;border-radius:8px;border:1.5px solid var(--border);
-            background:var(--surface2);cursor:pointer;color:var(--muted);font-size:14px;
-            display:flex;align-items:center;justify-content:center;" title="Auto cada 10s">⏱</button>
         </div>
       </div>
     </div>
@@ -1565,8 +1580,15 @@ function capturePhoto() {
 
 function renderGallery() {
   const grid = document.getElementById('gallery-grid');
-  document.getElementById('gallery-empty').style.display = camPhotos.length ? 'none' : 'block';
-  [...grid.querySelectorAll('.cam-gallery-item')].forEach(el => el.remove());
+  if (!grid) return;
+  // Clear ALL children completely to prevent floating items
+  while (grid.firstChild) grid.removeChild(grid.firstChild);
+  // Re-add empty state
+  const emptyEl = document.createElement('div');
+  emptyEl.id = 'gallery-empty';
+  emptyEl.style.cssText = 'grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);' + (camPhotos.length ? 'display:none' : '');
+  emptyEl.innerHTML = '<div style="font-size:40px;margin-bottom:12px;">📷</div><p>Aún no has capturado fotos.<br>Vuelve a "En Vivo" y toca el botón de captura.</p>';
+  grid.appendChild(emptyEl);
   camPhotos.forEach((p, i) => {
     const item = document.createElement('div');
     item.className = 'cam-gallery-item' + (p.selected ? ' selected' : '');
@@ -2319,6 +2341,107 @@ async function saveReportOffline(silent = false) {
 
 // Initialize
 updateOnlineStatus();
+
+// ══════════════════════════════════════════
+//  GALERÍA DEL REPORTE (en el editor)
+// ══════════════════════════════════════════
+let reportGalleryPhotos = []; // {url, path, selected, dbId}
+
+async function loadReportGallery() {
+  if (!currentReportId) { toast('!', 'Guarda el reporte primero'); return; }
+  const grid = document.getElementById('report-gallery-grid');
+  const emptyEl = document.getElementById('report-gallery-empty');
+  if (emptyEl) emptyEl.textContent = 'Cargando...';
+
+  const { data: imgs, error } = await sb.from('report_images')
+    .select('*')
+    .eq('report_id', currentReportId)
+    .eq('slot_index', -1)
+    .order('created_at');
+
+  if (error || !imgs || !imgs.length) {
+    if (emptyEl) emptyEl.textContent = 'No hay fotos en la galeria de este estudio';
+    return;
+  }
+
+  reportGalleryPhotos = [];
+  for (const img of imgs) {
+    const { data: signed } = await sb.storage.from('endoscopy-images').createSignedUrl(img.storage_path, 3600);
+    if (signed && signed.signedUrl) {
+      reportGalleryPhotos.push({ url: signed.signedUrl, path: img.storage_path, selected: false, dbId: img.id });
+    }
+  }
+  renderReportGallery();
+  const actions = document.getElementById('report-gallery-actions');
+  if (actions) actions.style.display = reportGalleryPhotos.length ? 'flex' : 'none';
+}
+
+function renderReportGallery() {
+  const grid = document.getElementById('report-gallery-grid');
+  if (!grid) return;
+  while (grid.firstChild) grid.removeChild(grid.firstChild);
+
+  if (!reportGalleryPhotos.length) {
+    const empty = document.createElement('div');
+    empty.id = 'report-gallery-empty';
+    empty.style.cssText = 'grid-column:1/-1;text-align:center;padding:20px;color:var(--dim);font-size:12px;';
+    empty.textContent = 'No hay fotos en la galeria';
+    grid.appendChild(empty);
+    return;
+  }
+
+  reportGalleryPhotos.forEach((p, i) => {
+    const item = document.createElement('div');
+    item.style.cssText = 'position:relative;aspect-ratio:1;border-radius:6px;overflow:hidden;cursor:pointer;border:2px solid ' + (p.selected ? 'var(--accent)' : 'transparent') + ';';
+    item.innerHTML = '<img src="' + p.url + '" style="width:100%;height:100%;object-fit:cover;">' +
+      (p.selected ? '<div style="position:absolute;inset:0;background:rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;font-size:20px;">&#10003;</div>' : '') +
+      '<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.5);color:#fff;font-size:9px;padding:2px 4px;">' + (i+1) + '</div>';
+    item.onclick = () => {
+      reportGalleryPhotos[i].selected = !reportGalleryPhotos[i].selected;
+      renderReportGallery();
+    };
+    grid.appendChild(item);
+  });
+}
+
+function selectAllGallery() {
+  reportGalleryPhotos.forEach(p => p.selected = true);
+  renderReportGallery();
+}
+
+async function deleteSelectedGallery() {
+  const selected = reportGalleryPhotos.filter(p => p.selected);
+  if (!selected.length) { toast('!', 'Selecciona fotos primero'); return; }
+  for (const p of selected) {
+    await sb.storage.from('endoscopy-images').remove([p.path]);
+    await sb.from('report_images').delete().eq('id', p.dbId);
+  }
+  reportGalleryPhotos = reportGalleryPhotos.filter(p => !p.selected);
+  renderReportGallery();
+  toast('OK', selected.length + ' foto(s) eliminada(s)');
+}
+
+async function addSelectedGalleryToReport() {
+  const selected = reportGalleryPhotos.filter(p => p.selected);
+  if (!selected.length) { toast('!', 'Selecciona fotos primero'); return; }
+  let added = 0;
+  for (const photo of selected) {
+    const slotIdx = imgSlots.findIndex(s => !s);
+    if (slotIdx === -1) { toast('!', 'Reporte lleno (max 12)'); break; }
+    // Get the file from URL and upload to report slot
+    try {
+      const resp = await fetch(photo.url);
+      const blob = await resp.blob();
+      const file = new File([blob], 'gallery-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+      await uploadImgToReport(file, slotIdx, currentReportId);
+      added++;
+    } catch(e) { toast('!', 'Error: ' + e.message); }
+  }
+  reportGalleryPhotos = reportGalleryPhotos.map(p => ({ ...p, selected: false }));
+  renderReportGallery();
+  toast('OK', added + ' foto(s) agregada(s) al reporte');
+}
+
 </script>
 </body>
 </html>
