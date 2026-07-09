@@ -249,7 +249,8 @@ input[type=file]{display:none;}
         <div class="logo-sub">Diagnóstico Endoscópico</div>
       </div>
     </div>
-    <div class="nav-right">
+    <div class="nav-right" style="gap:8px;">
+      <div id="offline-badge" style="display:none;background:var(--warn);color:#000;padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;letter-spacing:1px;">OFFLINE</div>
       <button class="btn btn-secondary btn-sm" onclick="goEditor(null)">＋ Nuevo</button>
       <button class="btn-icon" onclick="confirmLogout()" title="Cerrar sesión">⏏</button>
     </div>
@@ -307,7 +308,7 @@ input[type=file]{display:none;}
       <button class="btn btn-secondary btn-sm" id="ai-btn" onclick="runAI()">✦ IA</button>
       <button class="btn btn-secondary btn-sm" onclick="openSignature()">✍️ Firmar</button>
       <button class="btn btn-secondary btn-sm" onclick="openEmail()">📧 Email</button>
-      <button class="btn btn-secondary btn-sm" id="save-btn" onclick="saveReport()">💾 Guardar</button>
+      <button class="btn btn-secondary btn-sm" id="save-btn" onclick="saveReportOffline()">💾 Guardar</button>
       <button class="btn btn-secondary btn-sm" onclick="exportToWord()">📄 Word</button>
       <button class="btn btn-primary btn-sm" onclick="printReport()">⬇ PDF</button>
     </div>
@@ -603,7 +604,7 @@ input[type=file]{display:none;}
     <!-- Video feed -->
     <div style="flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden;min-height:0;">
       <video id="cam-video" autoplay playsinline muted
-        style="max-width:100%;max-height:100%;width:100%;object-fit:contain;touch-action:none;"></video>
+        style="max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;touch-action:none;" playsinline></video>
 
       <div id="cam-nosignal" style="
         position:absolute;inset:0;display:flex;flex-direction:column;
@@ -861,6 +862,7 @@ const MAX_SLOTS = 12;
 // Boot
 let bootDone = false;
 showScreen('auth');
+updateOnlineStatus();
 (async () => {
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -1511,8 +1513,8 @@ async function startStream(deviceId) {
   try {
     camStream = await navigator.mediaDevices.getUserMedia({
       video: { deviceId: deviceId ? { exact: deviceId } : undefined,
-               width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30 } },
-      audio: true
+               width: { ideal: 1920 }, height: { ideal: 1080 }, frameRate: { ideal: 30, max: 30 } },
+      audio: false // audio recorded separately to reduce load
     });
     document.getElementById('cam-video').srcObject = camStream;
     document.getElementById('cam-nosignal').style.display = 'none';
@@ -1634,7 +1636,10 @@ function startRecord() {
   recordedChunks = [];
   const mime = ['video/mp4;codecs=avc1','video/webm;codecs=vp9','video/webm']
     .find(m => MediaRecorder.isTypeSupported(m)) || 'video/webm';
-  mediaRecorder = new MediaRecorder(camStream, { mimeType: mime });
+  mediaRecorder = new MediaRecorder(camStream, {
+    mimeType: mime,
+    videoBitsPerSecond: 4000000 // 4Mbps - good quality without overloading CPU
+  });
   mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
   mediaRecorder.onstop = onRecordStop;
   mediaRecorder.start(1000);
@@ -2229,6 +2234,88 @@ async function loadGalleryFromCloud() {
   document.getElementById('gallery-count').textContent = camPhotos.length;
   renderGallery();
   toast('OK', loaded + ' foto(s) cargada(s)');
+}
+
+
+// ══════════════════════════════════════════
+//  OFFLINE MODE
+// ══════════════════════════════════════════
+let isOnline = navigator.onLine;
+let pendingSync = JSON.parse(localStorage.getItem('pendingSync') || '[]');
+
+window.addEventListener('online', async () => {
+  isOnline = true;
+  updateOnlineStatus();
+  if (pendingSync.length > 0) await syncPendingData();
+});
+window.addEventListener('offline', () => {
+  isOnline = false;
+  updateOnlineStatus();
+  toast('!', 'Sin conexion - modo offline activado');
+});
+
+function updateOnlineStatus() {
+  const badge = document.getElementById('offline-badge');
+  if (badge) {
+    badge.style.display = isOnline ? 'none' : 'flex';
+    badge.textContent = isOnline ? '' : 'OFFLINE';
+  }
+}
+
+async function syncPendingData() {
+  if (!pendingSync.length || !currentUser) return;
+  toast('...', 'Sincronizando ' + pendingSync.length + ' elemento(s)...');
+  const toSync = [...pendingSync];
+  pendingSync = [];
+  localStorage.setItem('pendingSync', '[]');
+  let synced = 0;
+  for (const item of toSync) {
+    try {
+      if (item.type === 'report') {
+        const { error } = await sb.from('reports').upsert({ ...item.data, user_id: currentUser.id });
+        if (!error) synced++;
+      }
+    } catch(e) { pendingSync.push(item); }
+  }
+  localStorage.setItem('pendingSync', JSON.stringify(pendingSync));
+  if (synced > 0) { toast('OK', synced + ' elemento(s) sincronizado(s)'); loadReports(); }
+}
+
+// Offline-aware save
+async function saveReportOffline(silent = false) {
+  const payload = {
+    id: currentReportId || ('local_' + Date.now()),
+    user_id: currentUser?.id,
+    patient_name:   document.getElementById('f-name').value.trim(),
+    patient_age:    parseInt(document.getElementById('f-age').value) || null,
+    patient_sex:    document.getElementById('f-sex').value,
+    patient_id_num: document.getElementById('f-ptid').value.trim(),
+    procedure:      document.getElementById('f-proc').value,
+    study_date:     document.getElementById('f-date').value || null,
+    instrument:     document.getElementById('f-instr').value,
+    sedation:       document.getElementById('f-sed').value,
+    assistant:      document.getElementById('f-assist').value.trim(),
+    reason:         document.getElementById('f-reason').value.trim(),
+    ref_doctor:     document.getElementById('f-ref').value.trim(),
+    findings:       document.getElementById('f-findings').value.trim(),
+    chips:          [...document.querySelectorAll('.chip.active')].map(c => c.textContent),
+    path_notes:     document.getElementById('f-patho').value.trim(),
+    status:         document.getElementById('f-status').value,
+  };
+
+  if (!isOnline) {
+    // Save to localStorage
+    const drafts = JSON.parse(localStorage.getItem('offlineDrafts') || '{}');
+    drafts[payload.id] = payload;
+    localStorage.setItem('offlineDrafts', JSON.stringify(drafts));
+    if (!currentReportId && payload.id.startsWith('local_')) currentReportId = payload.id;
+    document.getElementById('ed-sub').textContent = 'Guardado offline';
+    if (!silent) toast('OK', 'Guardado offline');
+    return;
+  }
+
+  // Online - save normally
+  return saveReport(silent);
 }
 
 </script>
