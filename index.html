@@ -862,7 +862,6 @@ const MAX_SLOTS = 12;
 // Boot
 let bootDone = false;
 showScreen('auth');
-updateOnlineStatus();
 (async () => {
   try {
     const { data: { session } } = await sb.auth.getSession();
@@ -2318,6 +2317,8 @@ async function saveReportOffline(silent = false) {
   return saveReport(silent);
 }
 
+// Initialize
+updateOnlineStatus();
 </script>
 </body>
 </html>
