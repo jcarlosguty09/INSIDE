@@ -584,7 +584,7 @@ input[type=file]{display:none;}
   </div>
 </div>
 
-<div id="camera" class="screen">
+<div id="camera" class="screen" style="z-index:0;">
   <nav class="topnav">
     <div style="display:flex;align-items:center;gap:10px;">
       <button class="btn-icon" onclick="closeCamera()">←</button>
@@ -1413,29 +1413,26 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 
 // ── Screens ────────────────────────────────────────────────────
 function showScreen(id) {
-  // Handle auth separately - it's always visible unless we're on another screen
-  const auth = document.getElementById('auth');
-  if (id === 'auth') {
-    if (auth) auth.style.display = 'flex';
-    ['dashboard','editor','camera'].forEach(sid => {
-      const el = document.getElementById(sid);
-      if (el) { el.classList.remove('active'); el.style.display = 'none'; }
-    });
-    return;
-  }
-  // Hide auth, show target screen
-  if (auth) auth.style.display = 'none';
-  ['dashboard','editor','camera'].forEach(sid => {
+  // Always hide ALL screens first
+  ['auth','dashboard','editor','camera'].forEach(sid => {
     const el = document.getElementById(sid);
     if (!el) return;
-    if (sid === id) {
-      el.classList.add('active');
-      el.style.display = 'flex';
-    } else {
-      el.classList.remove('active');
-      el.style.display = 'none';
-    }
+    el.classList.remove('active');
+    el.style.display = 'none';
+    el.style.zIndex = '';
   });
+  // Show target screen
+  const target = document.getElementById(id);
+  if (target) {
+    target.classList.add('active');
+    target.style.display = 'flex';
+    target.style.zIndex = '1';
+  }
+  // Auth is special - always visible when no other screen shown
+  if (id === 'auth') {
+    const auth = document.getElementById('auth');
+    if (auth) { auth.style.display = 'flex'; auth.style.zIndex = '1'; }
+  }
 }
 
 // ── Toast ──────────────────────────────────────────────────────
@@ -1480,13 +1477,13 @@ function closeCamera() {
   clearInterval(recTimerInterval);
   currentZoom = 1.0;
   const video = document.getElementById('cam-video');
-  if (video) { video.style.transform='scale(1)'; video.srcObject=null; }
-  // Always go back to editor if we came from one
+  if (video) { video.style.transform = 'scale(1)'; video.srcObject = null; }
+  // Force hide camera screen completely
+  const cam = document.getElementById('camera');
+  if (cam) { cam.style.display = 'none'; cam.classList.remove('active'); }
   if (camReportId) {
     showScreen('editor');
-    // Refresh the image grid in editor to show newly added photos
-    renderPreviewImages();
-    refreshImgGrid();
+    setTimeout(() => { renderPreviewImages(); refreshImgGrid(); }, 50);
   } else {
     showScreen('dashboard');
   }
