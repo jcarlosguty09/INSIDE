@@ -751,7 +751,7 @@ input[type=file]{display:none;}
     </div>
 
     <!-- Photo grid -->
-    <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:start;position:relative;">
+    <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:start;contain:layout;">
       <div id="gallery-empty" style="
         grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
         <div style="font-size:40px;margin-bottom:12px;">📷</div>
@@ -766,10 +766,13 @@ input[type=file]{display:none;}
         <span id="sel-count">0</span> foto(s) seleccionada(s)
         <span style="color:var(--dim);font-size:11px;margin-left:6px;" id="report-name-footer"></span>
       </div>
-      <div style="display:flex;gap:8px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button class="btn btn-danger btn-sm" onclick="camDeleteSelected()" id="btn-delete-sel">🗑 Eliminar</button>
         <button class="btn btn-primary btn-sm" onclick="saveSelectedToReport()" id="btn-save-sel">
           💾 Agregar al reporte
+        </button>
+        <button class="btn btn-secondary btn-sm" onclick="closeCamera()" style="margin-left:8px;">
+          ← Volver al reporte
         </button>
       </div>
     </div>
@@ -778,7 +781,7 @@ input[type=file]{display:none;}
 
 <style>
 @keyframes recBlink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-.cam-gallery-item { position:relative;aspect-ratio:4/3;border-radius:8px;overflow:hidden;cursor:pointer; }
+.cam-gallery-item { position:relative;aspect-ratio:4/3;border-radius:8px;overflow:hidden;cursor:pointer;min-width:0;min-height:0; }
 .cam-gallery-item img { width:100%;height:100%;object-fit:cover;transition:opacity 0.15s; }
 .cam-gallery-item .sel-overlay {
   position:absolute;inset:0;background:rgba(0,194,168,0.35);
@@ -1478,7 +1481,15 @@ function closeCamera() {
   currentZoom = 1.0;
   const video = document.getElementById('cam-video');
   if (video) { video.style.transform='scale(1)'; video.srcObject=null; }
-  showScreen(camReportId ? 'editor' : 'dashboard');
+  // Always go back to editor if we came from one
+  if (camReportId) {
+    showScreen('editor');
+    // Refresh the image grid in editor to show newly added photos
+    renderPreviewImages();
+    refreshImgGrid();
+  } else {
+    showScreen('dashboard');
+  }
 }
 
 function camSwitchTab(tab) {
