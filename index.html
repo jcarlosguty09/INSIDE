@@ -736,7 +736,7 @@ input[type=file]{display:none;}
   </div>
 
   <!-- ── TAB: GALLERY ── -->
-  <div id="cam-tab-gallery-content" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
+  <div id="cam-tab-gallery-content" style="flex:1;display:none;flex-direction:column;overflow:hidden;position:relative;">
     <!-- Gallery header -->
     <div style="padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);
       display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
@@ -751,10 +751,7 @@ input[type=file]{display:none;}
     </div>
 
     <!-- Photo grid -->
-    <div id="gallery-grid" style="
-      flex:1;overflow-y:auto;padding:12px;
-      display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
-      align-content:start;">
+    <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:start;position:relative;">
       <div id="gallery-empty" style="
         grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
         <div style="font-size:40px;margin-bottom:12px;">📷</div>
@@ -1624,9 +1621,24 @@ async function saveSelectedToReport() {
   for (const photo of selected) {
     const slotIdx = imgSlots.findIndex(s => !s);
     if (slotIdx === -1) { toast('\u26a0', 'Reporte lleno (max 12)'); break; }
-    const file = new File([photo.blob], `cap-${Date.now()}-${saved}.jpg`, { type: 'image/jpeg' });
-    await uploadImgToReport(file, slotIdx, camReportId);
-    saved++;
+    try {
+      if (photo.blob) {
+        // Fresh capture - upload normally
+        const file = new File([photo.blob], `cap-${Date.now()}-${saved}.jpg`, { type: 'image/jpeg' });
+        await uploadImgToReport(file, slotIdx, camReportId);
+      } else if (photo.path) {
+        // Cloud photo - copy storage path
+        const newPath = currentUser.id + '/' + camReportId + '/' + slotIdx + '.jpg';
+        await sb.storage.from('endoscopy-images').copy(photo.path, newPath);
+        await sb.from('report_images').delete().eq('report_id', camReportId).eq('slot_index', slotIdx);
+        await sb.from('report_images').insert({ report_id: camReportId, storage_path: newPath, slot_index: slotIdx, label: '' });
+        if (camReportId === currentReportId) {
+          imgSlots[slotIdx] = { url: photo.url, path: newPath, label: '' };
+          refreshImgGrid();
+        }
+      }
+      saved++;
+    } catch(e) { toast('\u26a0', 'Error: ' + e.message); }
   }
   camPhotos = camPhotos.map(p => p.selected ? { ...p, selected: false } : p);
   renderGallery();
@@ -2424,16 +2436,20 @@ async function deleteSelectedGallery() {
 async function addSelectedGalleryToReport() {
   const selected = reportGalleryPhotos.filter(p => p.selected);
   if (!selected.length) { toast('!', 'Selecciona fotos primero'); return; }
+  if (!currentReportId) { toast('!', 'Guarda el reporte primero'); return; }
   let added = 0;
   for (const photo of selected) {
     const slotIdx = imgSlots.findIndex(s => !s);
     if (slotIdx === -1) { toast('!', 'Reporte lleno (max 12)'); break; }
-    // Get the file from URL and upload to report slot
     try {
-      const resp = await fetch(photo.url);
-      const blob = await resp.blob();
-      const file = new File([blob], 'gallery-' + Date.now() + '.jpg', { type: 'image/jpeg' });
-      await uploadImgToReport(file, slotIdx, currentReportId);
+      // Copy the storage path to a new slot (no re-upload needed)
+      const newPath = currentUser.id + '/' + currentReportId + '/' + slotIdx + '.jpg';
+      await sb.storage.from('endoscopy-images').copy(photo.path, newPath);
+      await sb.from('report_images').delete().eq('report_id', currentReportId).eq('slot_index', slotIdx);
+      await sb.from('report_images').insert({ report_id: currentReportId, storage_path: newPath, slot_index: slotIdx, label: '' });
+      imgSlots[slotIdx] = { url: photo.url, path: newPath, label: '' };
+      refreshImgGrid();
+      renderPreviewImages();
       added++;
     } catch(e) { toast('!', 'Error: ' + e.message); }
   }
