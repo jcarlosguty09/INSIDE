@@ -584,7 +584,7 @@ input[type=file]{display:none;}
   </div>
 </div>
 
-<div id="camera" class="screen" style="z-index:0;">
+<div id="camera" class="screen">
   <nav class="topnav">
     <div style="display:flex;align-items:center;gap:10px;">
       <button class="btn-icon" onclick="closeCamera()">←</button>
@@ -736,7 +736,7 @@ input[type=file]{display:none;}
   </div>
 
   <!-- ── TAB: GALLERY ── -->
-  <div id="cam-tab-gallery-content" style="flex:1;display:none;flex-direction:column;overflow:hidden;position:relative;">
+  <div id="cam-tab-gallery-content" style="flex:1;display:none;flex-direction:column;overflow:hidden;">
     <!-- Gallery header -->
     <div style="padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);
       display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
@@ -751,7 +751,7 @@ input[type=file]{display:none;}
     </div>
 
     <!-- Photo grid -->
-    <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:start;contain:layout;">
+    <div id="gallery-grid" style="flex:1;overflow-y:auto;padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;align-content:start;">
       <div id="gallery-empty" style="
         grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
         <div style="font-size:40px;margin-bottom:12px;">📷</div>
